@@ -25,7 +25,7 @@ export default function Navbar() {
       <div className="space-x-4">
         {mockUser?.role === "student" && (
           <>
-            <Link to="/" className="text-gray-700 hover:text-blue-500">Home</Link>
+            <Link to="/home" className="text-gray-700 hover:text-blue-500">Home</Link>
             <Link to="/applied" className="text-gray-700 hover:text-blue-500">Applied Companies</Link>
             <Link to="/profile" className="text-gray-700 hover:text-blue-500">Profile</Link>
           </>
