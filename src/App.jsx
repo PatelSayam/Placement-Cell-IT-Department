@@ -6,12 +6,14 @@ import StudentHome from './pages/StudentHome';
 import CompanyDetails from './pages/CompanyDetails';
 import AppliedCompanies from './pages/AppliedCompanies';
 import StudentProfile from './pages/ StudentProfile';
+import Login from './pages/Login';
 
 function App() {
   return (
     <BrowserRouter>
       <Navbar />
       <Routes>
+        <Route path="/login" element={<Login/>} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/general-info" element={<GeneralInfo />} />
         <Route path="/home" element={<StudentHome />} />
