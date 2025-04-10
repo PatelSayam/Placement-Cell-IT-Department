@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+import { Student } from "../models/student.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken"
@@ -21,13 +21,13 @@ export const verifyJWT = asyncHandler(async (req, _, next) => { // "_" if req,re
     
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
     
-        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+        const student = await Student.findById(decodedToken?._id).select("-password -refreshToken")
     
-        if(!user){
+        if(!student){
             throw new ApiError(401,"Invalid Access Token")
         }
     
-        req.user = user
+        req.student = student
         next()
 
 
