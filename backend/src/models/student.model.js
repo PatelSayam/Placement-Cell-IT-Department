@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-//skip require field as no filed as any compulsion!!
+
+//skip require field as no filed has any compulsion!!
 
 const studentSchema = new mongoose.Schema({
   collegeEmail: String,
@@ -78,6 +81,43 @@ const studentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+},
+{
+  timestamps: true
 });
+
+
+studentSchema.pre("save", async function (next) {
+  // Skip password hashing if the password is not modified or if the user is Google-authenticated
+  if (!this.isModified("password") || !this.password) return next();
+
+  // Hash the password only if it exists
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+studentSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password); // Compare hashed passwords
+};
+
+studentSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
+      {
+          _id: this._id,
+          email: this.collegeEmail,
+          username: this.fullname,
+          fullname: this.fullname,
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+  );
+};
+studentSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+      { _id: this._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+  );
+};
 
 export default mongoose.model('Student', studentSchema);
