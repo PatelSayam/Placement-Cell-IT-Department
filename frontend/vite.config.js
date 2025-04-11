@@ -8,6 +8,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    allowedHosts: ['59bd-106-214-114-47.ngrok-free.app'],
     port: 3000,
     open: true
   }
