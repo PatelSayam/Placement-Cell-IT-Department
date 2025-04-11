@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 const StudentProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [studentData, setStudentData] = useState({
