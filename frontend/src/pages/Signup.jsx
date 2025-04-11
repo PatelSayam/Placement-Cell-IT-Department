@@ -16,6 +16,7 @@ const Signup = () => {
 
     // Simulate OTP generation and email send
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("OTP: ", generatedOtp);
     setServerOtp(generatedOtp);
     setOtpSent(true);
 
