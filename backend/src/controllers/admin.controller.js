@@ -1,11 +1,15 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {Admin} from "../models/admin.model.js"
-import {Applications} from "../models/jobApplication.models.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
-import { User } from "../models/user.model.js"
-import { Jobs } from "../models/jobs.models.js"
+import Company from "../../models/company.model.js";
+import Application from "../../models/application.model.js";
+import { enqueueEmailJob } from "../../queues/emailQueue.js";
+import { Student } from "../models/student.model.js"
+import mongoose from "mongoose";
+
+
 
 const generateAccessAndRefreshTokens =( async (userId) => {
     try {
@@ -158,239 +162,370 @@ const logoutAdmin = asyncHandler(async (req, res) => {
             ))
 })
 
-const getAdminDashboard = asyncHandler(async (req, res) => {
-    const totalUsers = await User.countDocuments();
-    const totalJobs = await Jobs.countDocuments();
-    const totalApplications = await Applications.countDocuments();
 
-    const data = {
-        totalUsers,
-        totalJobs,
-        totalApplications,
-    };
-
+const listCompanies = asyncHandler(async (req, res) => {
+    const companies = await Company.find({});
     return res
         .status(200)
-        .json(new ApiResponse(200, data, "Admin Dashboard Data"));
-});
+        .json(
+            new ApiResponse(
+                200, 
+                companies
+            )
+        );
+  
+}) 
 
-const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select("-password -refreshToken")
+const createCompany = asyncHandler(async (req, res) => {
+    
+      const company = await Company.create({
+        ...req.body, // includes name, criteria, deadline, etc.
+        customFields: req.body.customFields, // if we go with this approach else not needed
+      });
+
+      return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201, company
+            )
+        );
+}) 
+
+
+const getApplicantsForCompany = asyncHandler(async (req, res) => {
+
+    const { companyId } = req.params;
+  
+    const applications = await Application.aggregate([
+      {
+        $match: {
+          company: new mongoose.Types.ObjectId(companyId),
+        },
+      },
+      {
+        $lookup: {
+          from: "students",
+          localField: "student",
+          foreignField: "_id",
+          as: "studentDetails",
+        },
+      },
+      { $unwind: "$studentDetails" },
+      {
+        $project: {
+          _id: 1,
+          appliedAt: 1,
+          "studentDetails.fullName": 1,
+          "studentDetails.email": 1,
+          "studentDetails.rollNo": 1,
+          "studentDetails.branch": 1,
+          "studentDetails.resumeUrl": 1,
+        },
+      },
+    ]);
+  
     return res
         .status(200)
-        .json(new ApiResponse(200, users, "Users retrieved successfully"))
-});
+        .json(
+            new ApiResponse
+            (
+                200, 
+                applications
+            )
+        );
 
-const deleteUser = asyncHandler(async (req, res) => {
-    const { userId } = req.body
-    const user = await User.findByIdAndDelete(userId)
-    if(!user){
-        throw new ApiError(404, "User not found")
-    }
+}) 
+
+
+const getEligibleStudents = asyncHandler(async (req, res) => {
+
+    //this controller is not needed coz we are not allowing the non eligible student 
+    //to apply. handle it on frontend part still for any use we have this api.
+    const { companyId } = req.params;
+    const company = await Company.findById(companyId);
+    
+    const eligible = await Student.find({
+      sscPercent: { $gte: company.criteria.ssc },
+      hscPercent: { $gte: company.criteria.hsc },
+      degreeCgpa: { $gte: company.criteria.cgpa },
+      backlogs: { $lte: company.criteria.backlogs },
+    });
+  
     return res
         .status(200)
-        .json(new ApiResponse(200, null, "User deleted successfully"))
-});
-
-const getAllJobs = asyncHandler(async (req, res) => {
-    const jobs = await Jobs.find().populate("createdBy", "title");
-    return res
-        .status(200)
-        .json(new ApiResponse(200, jobs, "Jobs retrieved successfully"));
-});
-
-const deleteJob = asyncHandler(async (req, res) => {
-    const { jobId } = req.body
-    const job = await Jobs.findByIdAndDelete(jobId);
-    if(!job){
-        throw new ApiError(404, "Job not found");
-    }
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, null, "Job deleted successfully"));
-});
-
-const getAllApplications = asyncHandler(async (req, res) => {
-    const applications = await Applications.find()
-        .populate("applicant", "username email")
-        .populate("job", "title");
-    return res
-        .status(200)
-        .json(new ApiResponse(200, applications, "Applications retrieved successfully"));
-});
-
-const deleteApplication = asyncHandler(async (req, res) => {
-    const { applicationId } = req.body
-    const application = await Applications.findByIdAndDelete(applicationId);
-    if(!application){
-        throw new ApiError(404, "Application not found");
-    }
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, null, "Application deleted successfully"));
-});
-const changePostJobStatus = asyncHandler(async(req, res)=>{
-
-    const {userId} = req.body
-
-    if(!userId){
-        throw new ApiError(404,"userId is undefined")
-    }
-
-    const user = await User.findById(userId)
-
-    user.isAllowedToPostJob = true
-
-    user.save({validateBeforeSave:false})
-
-    return res
-            .status(200)
-            .json(new ApiResponse(
-                200,
-                {user},
-                "Recruiter Allowed to post jobs now!"
-            ))
+        .json(
+            new ApiResponse(
+                200, 
+                eligible
+            )
+        );
 })
 
-const getMonthlyJobStats = asyncHandler(async (req, res) => {
-    const monthlyStats = await Jobs.aggregate([
-        {
-            $group: {
-                _id: { $month: "$createdAt" },
-                totalJobs: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } }
-    ]);
+const notifyStudents = asyncHandler( async (req, res) => {
+
+    const { emails, subject, message } = req.body;
+
+    //email service is one the redis server 
+  
+    emails.forEach((email) => {
+      enqueueEmailJob({ to: email, subject, text: message });
+    });
+  
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                "Emails queued successfully"
+            )
+        );
+})
+
+const delistCompany =asyncHandler(async (req, res) => {
+
+    const { companyId } = req.params;
+
+    await Company.findByIdAndUpdate(companyId, { isListed: false });
 
     return res
         .status(200)
-        .json(new ApiResponse(200, monthlyStats, "Monthly job stats retrieved successfully"));
-});
+        .json(
+            new ApiResponse
+            (
+                200, 
+                "Company delisted"
+            )
+        );
+})
 
-const getMonthlyApplicationsStats = asyncHandler(async (req, res) => {
-    const monthlyStats = await Applications.aggregate([
-        {
-            $group: {
-                _id: { $month: "$createdAt" },
-                totalApplications: { $sum: 1 }
-            }
+
+const getRealTimeStats = asyncHandler(async (req, res) => {
+
+    const { year, batch } = req.query;
+  
+    // Get total students in that batch/year
+    const totalStudents = await Student.countDocuments({
+      admissionYear: year,
+      batch: batch,
+      role: "student",
+    });
+  
+    // Get all PLACED applications for that year & batch
+    const placedApplications = await Application.aggregate([
+      {
+        $match: {
+          status: "PLACED",
+          placementYear: parseInt(year),
+          batch: batch,
         },
-        { $sort: { _id: 1 } }
+      },
+      {
+        $group: {
+          _id: "$student", // avoid counting same student twice
+          company: { $first: "$company" },
+          package: { $first: "$package" },
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "companyDetails",
+        },
+      },
+      {
+        $unwind: "$companyDetails",
+      },
     ]);
+  
+    const placedCount = placedApplications.length;
+    const totalPackage = placedApplications.reduce((acc, app) => acc + (app.package || 0), 0);
+    const highestPackage = placedApplications.reduce((max, app) => Math.max(max, app.package || 0), 0);
+    const avgPackage = placedCount > 0 ? totalPackage / placedCount : 0;
+  
+    // Compute company-wise stats
+    const companyStatsMap = {};
+    placedApplications.forEach(app => {
+      const name = app.companyDetails.name;
+  
+      if (!companyStatsMap[name]) {
+        companyStatsMap[name] = {
+          companyId: app.companyDetails._id,
+          companyName: name,
+          placedCount: 0,
+          totalPackage: 0,
+        };
+      }
+  
+      companyStatsMap[name].placedCount += 1;
+      companyStatsMap[name].totalPackage += app.package || 0;
+    });
+  
+    const companyStats = Object.values(companyStatsMap).map(stat => ({
+      ...stat,
+      averagePackage: stat.totalPackage / stat.placedCount,
+      placementPercentage: ((stat.placedCount / totalStudents) * 100).toFixed(2),
+    }));
+  
+    
+    const quote =
+      placedCount === 0
+        ? "No placements yet."
+        : `${((placedCount / totalStudents) * 100).toFixed(2)}% placement achieved this season`;
+  
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {
+                    year,
+                    batch,
+                    totalStudents,
+                    placedCount,
+                    unplacedCount: totalStudents - placedCount,
+                    averagePackage: avgPackage.toFixed(2),
+                    highestPackage,
+                    totalOffers: placedApplications.length,
+                    companyWise: companyStats,
+                    quote,
+                })
+            );
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, monthlyStats, "Monthly application stats retrieved successfully"));
-});
+}) 
 
-const getMonthlyJobApplications = asyncHandler(async (req, res) => {
-    const monthlyApplications = await Applications.aggregate([
-        {
-            $group: {
-                _id: { $month: "$createdAt" },
-                totalApplications: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } }
-    ]);
 
-    return res.status(200).json(
-        new ApiResponse(200, monthlyApplications, "Monthly job applications count retrieved successfully")
-    );
-});
+const getRealTimeStatsYearWise = asyncHandler(async (req, res) => {
+    const { year } = req.query;
+  
+    if (!year) {
+      return res.status(400).json(new ApiResponse(400, null, "Year is required"));
+    }
+  
+    // Helper to generate stats for a specific batch in a year
+    const getBatchStats = async (year, batch) => {
+      const totalStudents = await Student.countDocuments({
+        admissionYear: year,
+        batch,
+        role: "student",
+      });
 
-const getMonthlyUserRegistrations = asyncHandler(async (req, res) => {
-    const monthlyUsers = await User.aggregate([
-        {
-            $group: {
-                _id: { $month: "$createdAt" },
-                totalUsers: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } }
-    ]);
+        const placedApplications = await Application.aggregate(
+            [
+                {
+                    $match: {
+                    status: "PLACED",
+                    placementYear: parseInt(year),
+                    batch,
+                    },
+                },
+                {
+                    $group: {
+                    _id: "$student",
+                    company: { $first: "$company" },
+                    package: { $first: "$package" },
+                    },
+                },
+                {
+                    $lookup: {
+                    from: "companies",
+                    localField: "company",
+                    foreignField: "_id",
+                    as: "companyDetails",
+                    },
+                },
+                { $unwind: "$companyDetails" },
+            ]
+        );
 
-    return res.status(200).json(
-        new ApiResponse(200, monthlyUsers, "Monthly user registrations retrieved successfully")
-    );
-});
+        const placedCount = placedApplications.length;
+        const totalPackage = placedApplications.reduce((acc, app) => acc + (app.package || 0), 0);
+        const highestPackage = placedApplications.reduce(
+        (max, app) => Math.max(max, app.package || 0),
+        0
+        );
+        const avgPackage = placedCount > 0 ? totalPackage / placedCount : 0;
 
-const getMonthlyJobPostings = asyncHandler(async (req, res) => {
-    const monthlyJobs = await Jobs.aggregate([
-        {
-            $group: {
-                _id: { $month: "$createdAt" },
-                totalJobs: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } }
-    ]);
-
-    return res.status(200).json(
-        new ApiResponse(200, monthlyJobs, "Monthly job postings retrieved successfully")
-    );
-});
-
-const getTopJobCategories = asyncHandler(async (req, res) => {
-    const categoryStats = await Applications.aggregate([
-        {
-            $lookup: {
-                from: "jobs",
-                localField: "job",
-                foreignField: "_id",
-                as: "jobDetails"
-            }
-        },
-        { $unwind: "$jobDetails" },
-        {
-            $group: {
-                _id: "$jobDetails.category",
-                totalApplications: { $sum: 1 }
-            }
-        },
-        { $sort: { totalApplications: -1 } },
-        { $limit: 5 } 
-    ]);
-
-    return res.status(200).json(
-        new ApiResponse(200, categoryStats, "Top job categories retrieved successfully")
-    );
-});
-
-const getApplicationStatusDistribution = asyncHandler(async (req, res) => {
-    const statusDistribution = await Applications.aggregate([
-        {
-            $group: {
-                _id: "$status",
-                count: { $sum: 1 }
-            }
+        const companyStatsMap = {};
+        placedApplications.forEach(app => {
+        const name = app.companyDetails.name;
+        if (!companyStatsMap[name]) {
+            companyStatsMap[name] = {
+            companyId: app.companyDetails._id,
+            companyName: name,
+            placedCount: 0,
+            totalPackage: 0,
+            };
         }
-    ]);
+        companyStatsMap[name].placedCount += 1;
+        companyStatsMap[name].totalPackage += app.package || 0;
+        });
 
-    return res.status(200).json(
-        new ApiResponse(200, statusDistribution, "Application status distribution retrieved successfully")
+        const companyStats = Object.values(companyStatsMap).map(stat => ({
+        ...stat,
+        averagePackage: stat.totalPackage / stat.placedCount,
+        placementPercentage: ((stat.placedCount / totalStudents) * 100).toFixed(2),
+        }));
+    
+        const packageBuckets = {
+            "<4": 0,
+            "4-6": 0,
+            "6-8": 0,
+            "8+": 0,
+          };
+          
+          placedApplications.forEach(data => {
+            const pkg = data.package || 0;
+          
+            if (pkg < 4) packageBuckets["<4"]++;
+            else if (pkg >= 4 && pkg < 6) packageBuckets["4-6"]++;
+            else if (pkg >= 6 && pkg < 8) packageBuckets["6-8"]++;
+            else packageBuckets["8+"]++;
+          });
+          
+          const packageDistribution = [
+            { range: "< 4 LPA", count: packageBuckets["<4"] },
+            { range: "4–6 LPA", count: packageBuckets["4-6"] },
+            { range: "6–8 LPA", count: packageBuckets["6-8"] },
+            { range: "8+ LPA", count: packageBuckets["8+"] },
+          ];
+
+        return {
+        year,
+        batch,
+        totalStudents,
+        placedCount,
+        unplacedCount: totalStudents - placedCount,
+        averagePackage: avgPackage.toFixed(2),
+        highestPackage,
+        totalOffers: placedApplications.length,
+        companyWise: companyStats,
+        packageDistribution,
+        };
+    };
+
+    // Get all batches for this admission year
+    const allBatches = await Student.distinct("batch", {
+      admissionYear: year,
+      role: "student",
+    });
+  
+    const batchWiseStats = await Promise.all(
+      allBatches.map(batch => getBatchStats(year, batch))
     );
-});
+  
+    return res
+      .status(200).
+      json(
+          new ApiResponse
+          (
+              200, 
+              batchWiseStats
+          )
+        );
 
-const getAverageSalaryByCategory = asyncHandler(async (req, res) => {
-    const avgSalary = await Jobs.aggregate([
-        {
-            $group: {
-                _id: "$category",
-                averageSalary: { $avg: "$salary" }
-            }
-        },
-        { $sort: { averageSalary: -1 } }
-    ]);
-
-    return res.status(200).json(
-        new ApiResponse(200, avgSalary, "Average salary by category retrieved successfully")
-    );
-});
-
+     
+})
 
 
 
@@ -401,21 +536,5 @@ export {
     registerAdmin,
     loginAdmin,
     logoutAdmin,
-    getAdminDashboard,
-    deleteUser,
-    getAllUsers,
-    deleteJob,
-    getAllJobs,
-    getAllApplications,
-    deleteApplication,
-    changePostJobStatus,
-    getMonthlyJobApplications,
-    getMonthlyUserRegistrations,
-    getMonthlyJobPostings,
-    getTopJobCategories,
-    getApplicationStatusDistribution,
-    getAverageSalaryByCategory,
 
-    getMonthlyJobStats,
-    getMonthlyApplicationsStats,
 }
