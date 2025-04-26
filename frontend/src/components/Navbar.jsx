@@ -11,7 +11,7 @@ export default function Navbar() {
 
   const mockUser = {
     name: "Test User",
-    role: "admin", // Change to "admin" to test admin view
+    role: "student", // Change to "admin" to test admin view
   }
 
   const handleLogout = () => {

@@ -1,212 +1,168 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {Applications} from "../models/jobApplication.models.js"
-import {Jobs} from "../models/jobs.models.js"
+import Company from "../models/company.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import mongoose from "mongoose"
 import { sendEmail } from "../utils/Nodemailer.js"
 import { User } from "../models/user.model.js"
+import { Student } from "../models/student.model.js"
 
 const applyToJob = asyncHandler(async (req, res) => {
 
-    const { jobId } = req.body
-    // console.log(jobId);
-    // console.log(req.body);
+    const { companyId } = req.body
     
-    
-    
-    if(!jobId){
-        throw new ApiError(400, "jobId is required")
+    if(!companyId){
+        throw new ApiError(400, "companyId is required")
     }
 
-    const job = await Jobs.findById(jobId)
+    const company = await Company.findById(companyId)
 
-    if(!job){
-        throw new ApiError(400,"job not found")
+    if(!company){
+        throw new ApiError(400,"company not found")
     }
 
     const existingApplication = await Applications.findOne({
-        job : jobId,
-        applicant : req.user._id
+        companyId,
+        studentId : req.student._id
     })
 
     if(existingApplication){
-        throw new ApiError(400,"already applied to this job")
+        throw new ApiError(400,"already applied to this company")
     }
 
     const newApplication = await Applications.create({
-        job : jobId,
-        applicant : req.user._id
+        companyId,
+        studentId : req.student._id
     })
 
-    const user = await User.findById(req.user._id);
-    if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
+    const student = await Student.findById(req.student._id);
+    if (!student) {
+        return res.status(404).json({ success: false, message: "student not found" });
     }
 
-    const emailSubject = `Applied to ${job.title}`;
-    const emailText =
-       ` ${user.username} applied For ${job.title} 
-       Location : ${job.location} 
-       Type : ${job.type} 
-       Overview : ${job.overview} 
-       Responsibility : ${job.responsiblity} 
-       Requirment : ${job.requirment} 
-       SALARY : ${job.salary}`
+    // const emailSubject = `Applied to ${job.title}`;
+    // const emailText =
+    //    ` ${user.username} applied For ${job.title} 
+    //    Location : ${job.location} 
+    //    Type : ${job.type} 
+    //    Overview : ${job.overview} 
+    //    Responsibility : ${job.responsiblity} 
+    //    Requirment : ${job.requirment} 
+    //    SALARY : ${job.salary}`
 
-    await sendEmail(user.email, emailSubject, emailText);
+    // await sendEmail(user.email, emailSubject, emailText);
 
     //console.log("email sent!");
 
     res
     .status(200)
-    .json(new ApiResponse(200,newApplication,"applied to job successfully"))
+    .json(new ApiResponse(200,newApplication,"applied to company successfully"))
 
 })
 
 const getApplicant = asyncHandler(async (req, res) => {
 
-    const { jobId } = req.body
-   // console.log(req.body);
-    const JobId = jobId
+    const { companyId } = req.body
     
-    const applicantForJobs = await Applications.aggregate([
+    const studentForCompany = await Applications.aggregate([
         {
-            $match : { job : new mongoose.Types.ObjectId(JobId)}
+            $match : { companyId : new mongoose.Types.ObjectId(companyId)}
         },
         {   
             $lookup : {
-                from : "users",
-                localField : "applicant",
+                from : "students",
+                localField : "studentId",
                 foreignField : "_id",
-                as : "applicantDetails"
+                as : "studentDetails"
             },
         },
         {
-            $unwind : "$applicantDetails"
+            $unwind : "$studentDetails"
         },
         {
             $project:{
                 _id : 1,
-                "applicantDetails._id" : 1,
-                "applicantDetails.username" : 1,
-                "applicantDetails.email" : 1,
-                "applicantDetails.fullname" : 1,
+                "studentDetails._id" : 1,
+                "studentDetails.username" : 1,
+                "studentDetails.email" : 1,
+                "studentDetails.fullname" : 1,
                 "status" : 1,
             },
         },
     ])
-    //console.log(applicantForJobs);
-   // console.log("status ++"+applicantForJobs.status);
     
 
     return res
     .status(200)
-    .json(new ApiResponse(200, applicantForJobs, "Applicants Retrive Sucessfully"))
+    .json(new ApiResponse(200, applicantForJobs, "students Retrive Sucessfully"))
 })
 
-const getJob = asyncHandler(async (req, res) => {
+const getCompany = asyncHandler(async (req, res) => {
 
-    const  userId  = req.user._id
+    const  studentId  = req.student._id
     
-    const jobsOfApplicant = await Applications.aggregate([
+    const appliedCompaniesOfStudent = await Applications.aggregate([
         {
-            $match : { applicant : new mongoose.Types.ObjectId(userId)}
+            $match : { studentId : new mongoose.Types.ObjectId(studentId)}
         },
         {   
             $lookup : {
-                from : "jobs",
-                localField : "job",
+                from : "company",
+                localField : "companyId",
                 foreignField : "_id",
-                as : "jobDetails"
+                as : "companyDetails"
             },
         },
         {
-            $unwind : "$jobDetails"
+            $unwind : "$companyDetails"
         },
         {
             $project:{
-                _id : 1, // id of document which stores in MongoDB with jobId and userId
-                "jobDetails._id" : 1,
-                "jobDetails.title" : 1,
-                "jobDetails.location" : 1,
-                "jobDetails.overview" : 1,
-                "jobDetails.status" :1,
+                _id : 1,
+                "companyDetails._id" : 1,
+                "companyDetails.title" : 1,
+                "companyDetails.location" : 1,//change what to project as needed 
+                "companyDetails.overview" : 1,
+                "companyDetails.status" :1,
                 status:1
             },
         },
     ])
-   // console.log(jobsOfApplicant);
 
     return res
     .status(200)
-    .json(new ApiResponse(200, jobsOfApplicant, "Jobs Retrive Sucessfully"))
+    .json(new ApiResponse(200, jobsOfApplicant, "companies Retrive Sucessfully"))
 })
 
-// const getJobPostedByRecruiter = asyncHandler(async (req, res) => {
-
-//     const  userId  = req.user._id
-    
-//     const jobsPosted = await Applications.aggregate([
-//         {
-//             $match : { applicant : new mongoose.Types.ObjectId(userId)}
-//         },
-//         {   
-//             $lookup : {
-//                 from : "jobs",
-//                 localField : "job",
-//                 foreignField : "_id",
-//                 as : "jobDetails"
-//             },
-//         },
-//         {
-//             $unwind : "$jobDetails"
-//         },
-//         {
-//             $project:{
-//                 _id : 1, // id of document which stores in MongoDB with jobId and userId
-//                 "jobDetails._id" : 1,
-//                 "jobDetails.title" : 1,
-//                 "jobDetails.location" : 1,
-//                 "jobDetails.overview" : 1,
-//             },
-//         },
-//     ])
-//     console.log(jobsOfApplicant);
-
-//     return res
-//     .status(200)
-//     .json(new ApiResponse(200, jobsOfApplicant, "Jobs Retrive Sucessfully"))
-// })
 
 const changeApplicationState = asyncHandler(async(req, res) => {
-    const { jobId, userId, status } = req.body;
-   // console.log(jobId, userId, status);
+    const { companyId, studentId, status } = req.body;
+
     
 
     // Update the status in the database
     const updatedApplication = await Applications.findOneAndUpdate(
-        { job: jobId, applicant: userId }, // Find the matching application
-        { $set: { status: status } }, // Update the status
-        { new: true } // Return the updated document
+        { companyId, studentId }, 
+        { $set: { status: status } }, 
+        { new: true } 
     );
 
-    const user = await User.findById(userId);
-    if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
+    const student = await Student.findById(studentId);
+    if (!student) {
+        return res.status(404).json({ success: false, message: "student not found" });
     }
 
-    const emailSubject = `Application ${status}`;
-    const emailText =
-        status === "Accepted"
-        ? `Congratulations! Your job application has been accepted.`
-        : `We regret to inform you that your job application has been rejected.`;
+    // const emailSubject = `Application ${status}`;
+    // const emailText =
+    //     status === "Accepted"
+    //     ? `Congratulations! Your job application has been accepted.`
+    //     : `We regret to inform you that your job application has been rejected.`;
 
-    await sendEmail(user.email, emailSubject, emailText);
+    // await sendEmail(user.email, emailSubject, emailText);
 
-   // console.log("email sent!");
     
 
     if (!updatedApplication) {
@@ -216,14 +172,14 @@ const changeApplicationState = asyncHandler(async(req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, updatedApplication, "Status updated successfully"));
-});
+}); // same controller also present in admin controllers file
 
 
 
 export {
     getApplicant,
     applyToJob,
-    getJob,
+    getCompany,
     changeApplicationState
 }
 
