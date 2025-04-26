@@ -3,11 +3,12 @@ import {ApiError} from "../utils/ApiError.js"
 import {Admin} from "../models/admin.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
-import Company from "../../models/company.model.js";
+import {Company} from "../../models/company.model.js";
 import Application from "../../models/application.model.js";
 import { enqueueEmailJob } from "../../queues/emailQueue.js";
 import { Student } from "../models/student.model.js"
 import mongoose from "mongoose";
+import emailQueue from '../utils/emailQueue.js';
 
 
 
@@ -262,25 +263,33 @@ const getEligibleStudents = asyncHandler(async (req, res) => {
         );
 })
 
-const notifyStudents = asyncHandler( async (req, res) => {
+const notifyStudents = asyncHandler(async (req, res) => {
 
-    const { emails, subject, message } = req.body;
+  const { emails, subject, message } = req.body;
 
-    //email service is one the redis server 
-  
-    emails.forEach((email) => {
-      enqueueEmailJob({ to: email, subject, text: message });
-    });
-  
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200, 
-                "Emails queued successfully"
-            )
-        );
-})
+  //emails is a array of all the emails.
+  //extract all the emails from frontend 
+  //so that server dont have any load for file handling.
+
+
+  if (!emails || !subject || !message) {
+    return res.status(400).json(new ApiResponse(400, null, 'Missing required fields.'));
+  }
+
+
+  emails.forEach((email) => {
+    emailQueue.add({ to: email, subject, text: message }); 
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        'Emails queued successfully'
+      )
+    );
+});
 
 const delistCompany =asyncHandler(async (req, res) => {
 
@@ -526,6 +535,271 @@ const getRealTimeStatsYearWise = asyncHandler(async (req, res) => {
 
      
 })
+
+
+const getMonthWisePlacementStats = asyncHandler(async (req, res) => {
+
+  const { year } = req.query;
+
+  if (!year) {
+    throw new ApiError(400, "Year is required");
+  }
+
+  const placedApplications = await Application.aggregate([
+    {
+      $match: {
+        status: "PLACED",
+        placementYear: parseInt(year),
+      },
+    },
+    {
+      $project: {
+        month: { $month: "$placementDate" },
+      },
+    },
+    {
+      $group: {
+        _id: "$month",
+        placedCount: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const monthWiseStats = monthNames.map((name, index) => {
+    const monthData = placedApplications.find(m => m._id === index + 1);
+    return {
+      month: name,
+      placedCount: monthData ? monthData.placedCount : 0,
+    };
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        {
+          year,
+          monthWiseStats,
+        }
+      )
+    );
+});
+
+const getDashboardStats = asyncHandler(async (req, res) => {
+
+  const { year } = req.query;
+
+  if (!year) {
+    throw new ApiError(400, "Year is required");
+  }
+
+  // 1. Total students of that admission year
+  const totalStudents = await Student.countDocuments({
+    admissionYear: parseInt(year),
+    role: "student",
+  });
+
+  // 2. Total placed students (unique student IDs)
+  const placedStudents = await Application.aggregate([
+    {
+      $match: {
+        status: "PLACED",
+        placementYear: parseInt(year),
+      },
+    },
+    {
+      $group: {
+        _id: "$student",
+      },
+    },
+    {
+      $count: "placedCount",
+    },
+  ]);
+
+  const placedCount = placedStudents.length > 0 ? placedStudents[0].placedCount : 0;
+
+  // 3. Not placed students = total - placed
+  const notPlacedCount = totalStudents - placedCount;
+
+  // 4. Active companies (full list)
+  const activeCompaniesList = await Company.find(
+    { 
+      status: "ACTIVE" 
+    },
+    { 
+      _id: 1, 
+      name: 1, 
+      logo: 1 
+    } 
+  );
+
+  const activeCompaniesCount = activeCompaniesList.length;
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        {
+          year,
+          totalStudents,
+          placedStudents: placedCount,
+          notPlacedStudents: notPlacedCount,
+          activeCompaniesCount,
+          activeCompanies: activeCompaniesList,
+        }
+      )
+    );
+});
+
+const getAllStudents = asyncHandler(async (req, res) => {
+  
+  //TODO: add filters like by year if needed
+
+  const students = await Student.find( 
+    {},
+    {
+      name: 1,
+      email: 1,
+      phone: 1,
+      branch: 1,
+      batch: 1,
+      admissionYear: 1,
+      resumeLink: 1,
+      placementStatus: 1,
+      appliedCompanies: 1, 
+      placedCompany: 1,
+      createdAt: 1,
+    }
+  ).sort({ createdAt: -1 }); // Newest students first
+
+  if (!students || students.length === 0) {
+    throw new ApiError(404, "No students found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        students
+      )
+    );
+});
+
+
+const getAllCompanies = asyncHandler(async (req, res) => {
+  
+  //TODO: add filters if needed (example: active only)
+
+  const companies = await Company.find(
+    {},
+    {
+      name: 1,
+      email: 1,
+      phone: 1,
+      website: 1,
+      industryType: 1,
+      packageOffered: 1,
+      isActive: 1, 
+      driveDate: 1,
+      createdAt: 1,//all other info (according to model which is not present yet : "assumption game on!")
+    }
+  ).sort({ createdAt: -1 }); // Newest companies first
+
+  if (!companies || companies.length === 0) {
+    throw new ApiError(404, "No companies found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        companies
+      )
+    );
+});
+
+
+const getAllApplications = asyncHandler(async (req, res) => {
+
+  const { companyId, status } = req.query;
+
+  const query = {};
+
+  if (companyId) {
+    query.company = companyId;
+  }
+
+  if (status) {
+    query.status = status.toUpperCase();
+  }
+
+  const applications = await Application.find(query)
+    .sort({ createdAt: -1 });
+
+  if (!applications || applications.length === 0) {
+    throw new ApiError(404, "No applications found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        applications
+      )
+    );
+});
+
+
+const updateApplicationStatus = asyncHandler(async (req, res) => {
+
+  const { applicationId } = req.params;
+  const { newStatus } = req.body;
+
+  if (!applicationId || !newStatus) {
+    throw new ApiError(400, "Application ID and new status are required");
+  }
+
+  const validStatuses = ["PLACED", "PENDING", "REJECTED"];
+
+  if (!validStatuses.includes(newStatus.toUpperCase())) {
+    throw new ApiError(400, "Invalid status. Valid statuses are PLACED, PENDING, REJECTED");
+  }
+
+  const updatedApplication = await Application.findByIdAndUpdate(
+    applicationId,
+    { status: newStatus.toUpperCase() },
+    { new: true }
+  )
+
+  if (!updatedApplication) {
+    throw new ApiError(404, "Application not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200, 
+        updatedApplication, 
+        "Application status updated successfully"
+      )
+    );
+});
+
 
 
 
