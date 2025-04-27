@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { OTP } from "../models/otp.model.js"
 import { AllowedEmail } from "../models/allowedEmails.model.js"
+import { sendEmail } from "../utils/Nodemailer.js"
 
 
 export const generateAccessAndRefreshTokens = async (studentId) => {
@@ -431,6 +432,7 @@ const registerWithOtp = asyncHandler(async (req, res) => {
     }
 
     const otpRecord = await OTP.findOne({ email, isVerified: true });
+
     if (!otpRecord) {
         throw new ApiError(400, "Please verify your email with OTP first");
     }
@@ -447,7 +449,7 @@ const registerWithOtp = asyncHandler(async (req, res) => {
             new ApiResponse(
                 201, 
                 student, 
-                "User registered successfully"
+                "Student registered successfully"
             )
         );
 });
