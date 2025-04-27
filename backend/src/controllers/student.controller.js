@@ -4,6 +4,8 @@ import {Student} from "../models/student.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { OTP } from "../models/otp.model.js"
+import { AllowedEmail } from "../models/allowedEmails.model.js"
 
 
 export const generateAccessAndRefreshTokens = async (studentId) => {
@@ -333,22 +335,124 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
 });
 
+const sendOtp = asyncHandler(async (req, res) => {
+
+    const { email } = req.body;
+
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+
+    const allowed = await AllowedEmail.findOne({ email });
+    if (!allowed) {
+        throw new ApiError(403, "Email is not allowed to register");
+    }
+
+    const existingOtp = await OTP.findOne({ email });
+
+    if (existingOtp) {
+        const now = new Date();
+        const oneMinuteAgo = new Date(now.getTime() - 1 * 60 * 1000); 
+
+        if (existingOtp.createdAt > oneMinuteAgo) {
+            throw new ApiError(429, "OTP already sent recently. Please wait before requesting again.");
+        }
+
+        await OTP.deleteOne({ email });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await OTP.create({
+        email,
+        otp,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes expiry
+    });
+
+    await sendEmail(
+        email,
+        "Your OTP Code",
+        `Your OTP code is ${otp}. It is valid for 10 minutes.`
+    );
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                {}, 
+                "OTP sent successfully"
+            )
+        );
+});
 
 
-// const forgotPassword = asyncHandler(async (req, res) => {
-//     const {email, newPassword} = req.body
 
-//     if(!email){
-//         throw new ApiError(400,"email is requried")
-//     }
+const verifyOtp = asyncHandler(async (req, res) => {
 
-//     const user = await User.findOne(email)
+    const { email, otp } = req.body;
 
-//     if(!user){
-//         throw new ApiError(404,"user does not exist")
-//     }
+    if (!email || !otp) {
+        throw new ApiError(400, "Email and OTP are required");
+    }
 
-// })
+    const record = await OTP.findOne({ email, otp });
+
+    if (!record) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    if (record.expiresAt < new Date()) {
+        throw new ApiError(400, "OTP has expired");
+    }
+
+    record.isVerified = true;
+    await record.save();
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200, 
+                {}, 
+                "OTP verified successfully"
+            )
+        );
+});
+
+
+const registerWithOtp = asyncHandler(async (req, res) => {
+
+    const { email, password, username } = req.body;
+
+    if (!email || !password || !username) {
+        throw new ApiError(400, "Email, Password and Username are required");
+    }
+
+    const otpRecord = await OTP.findOne({ email, isVerified: true });
+    if (!otpRecord) {
+        throw new ApiError(400, "Please verify your email with OTP first");
+    }
+
+    const student = await Student.create({
+        email,
+        password, 
+        username
+    });
+
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201, 
+                student, 
+                "User registered successfully"
+            )
+        );
+});
+
+
 
 
 
@@ -361,5 +465,8 @@ export {
     getCurrentStudent,
     updateAccountDetails,
     viewProfile,
-    getAllStudents
+    getAllStudents,
+    sendOtp,
+    verifyOtp,
+    registerWithOtp,
 }
