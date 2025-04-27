@@ -12,7 +12,7 @@ import { Student } from "../models/student.model.js"
 
 const applyToJob = asyncHandler(async (req, res) => {
 
-    const { companyId } = req.body
+    const { companyId } = req.params;
     
     if(!companyId){
         throw new ApiError(400, "companyId is required")
@@ -65,7 +65,7 @@ const applyToJob = asyncHandler(async (req, res) => {
 
 const getApplicant = asyncHandler(async (req, res) => {
 
-    const { companyId } = req.body
+    const { companyId } = req.params;
     
     const studentForCompany = await Applications.aggregate([
         {
@@ -139,7 +139,9 @@ const getCompany = asyncHandler(async (req, res) => {
 
 
 const changeApplicationState = asyncHandler(async(req, res) => {
-    const { companyId, studentId, status } = req.body;
+
+    const { companyId, studentId } = req.params;
+    const { status } = req.body;
 
     
 

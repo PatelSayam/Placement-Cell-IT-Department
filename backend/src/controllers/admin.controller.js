@@ -807,8 +807,24 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
 
 
 export {
-    registerAdmin,
-    loginAdmin,
-    logoutAdmin,
+  generateAccessAndRefreshTokens,
+  registerAdmin,
+  loginAdmin,
+  logoutAdmin,
+  listCompanies,
+  listCompanies,
+  createCompany,
+  getApplicantsForCompany,
+  getEligibleStudents,
+  notifyStudents,
+  delistCompany,
+  getRealTimeStats,
+  getRealTimeStatsYearWise,
+  getMonthWisePlacementStats,
+  getDashboardStats,
+  getAllStudents,
+  getAllCompanies,
+  getAllApplications,
+  updateApplicationStatus
 
 }
