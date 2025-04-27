@@ -1,0 +1,7 @@
+
+
+- make logger
+- rate limitings (low priority currently)
+- email service
+- settings for emails
+- option to diable application forms
