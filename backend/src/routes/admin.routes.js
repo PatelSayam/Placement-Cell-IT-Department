@@ -25,7 +25,8 @@ router.post("/login", loginAdmin);
 router.post("/logout", verifyJWTAdmin, logoutAdmin);
 
 // Company Management
-router.get("/companies", verifyJWTAdmin, listCompanies);
+// router.get("/companies", verifyJWTAdmin, listCompanies);
+router.get("/companies", listCompanies);
 router.post("/companies", verifyJWTAdmin, createCompany);
 router.patch("/companies/:companyId/delist", verifyJWTAdmin, delistCompany);
 

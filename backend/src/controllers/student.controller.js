@@ -12,8 +12,8 @@ import { sendEmail } from "../utils/Nodemailer.js"
 export const generateAccessAndRefreshTokens = async (studentId) => {
     try {
         const student = await Student.findById(studentId)
-        const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
+        const accessToken = student.generateAccessToken()
+        const refreshToken = student.generateRefreshToken()
 
         student.refreshToken = refreshToken
         await student.save({validateBeforeSave:false})
@@ -97,9 +97,9 @@ const loginStudent = asyncHandler( async(req, res) => {
         throw new ApiError(400,"email is requried")
     }
 
-    const student = await Student.findOne({
-        $or: [{email},{fullname}]
-    })
+    const student = await Student.findOne(
+        {personalEmail:email}
+    )
 
     if(!student){
         throw new ApiError(404,"student does not exist")
@@ -438,9 +438,13 @@ const registerWithOtp = asyncHandler(async (req, res) => {
     }
 
     const student = await Student.create({
-        email,
+        personalEmail:email,
         password, 
     });
+
+    if(!student){
+        throw new ApiError(400,"student not registed ")
+    }
 
     return res
         .status(201)
