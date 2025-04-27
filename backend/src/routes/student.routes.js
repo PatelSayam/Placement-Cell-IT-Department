@@ -1,5 +1,15 @@
 import { Router } from "express";
-import { changePassword, getAllStudents, getCurrentStudent, loginStudent, logoutStudent, refreshAccessToken, registerStudent, updateAccountDetails, viewProfile } from "../controllers/student.controller.js";
+import { 
+    changePassword, 
+    getAllStudents, 
+    getCurrentStudent, 
+    loginStudent, 
+    logoutStudent, 
+    refreshAccessToken, 
+    registerStudent, 
+    updateAccountDetails, 
+    viewProfile 
+} from "../controllers/student.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {upload} from "../middlewares/multer.middleware.js"
 
