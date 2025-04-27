@@ -1,8 +1,7 @@
-
 import Bull from 'bull';
 import nodemailer from 'nodemailer';
-import { redisConfig } from './redisConfig.js';
-
+import redisConfig from './redisConfig.js';
+ 
 
 const emailQueue = new Bull('emailQueue', redisConfig);
 

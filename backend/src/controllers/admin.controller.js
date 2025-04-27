@@ -3,12 +3,12 @@ import {ApiError} from "../utils/ApiError.js"
 import {Admin} from "../models/admin.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
-import {Company} from "../../models/company.model.js";
-import Application from "../../models/application.model.js";
-import { enqueueEmailJob } from "../../queues/emailQueue.js";
+import { Company} from "../models/company.model.js";
+import Application from "../models/application.model.js";
 import { Student } from "../models/student.model.js"
 import mongoose from "mongoose";
 import emailQueue from '../utils/emailQueue.js';
+import {AllowedEmail} from "../models/allowedEmails.model.js";
 
 
 
@@ -801,6 +801,41 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
 });
 
 
+const addEmailsToAllowedList = asyncHandler(async (req, res) => {
+
+    const { emails } = req.body; 
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        throw new ApiError(400, "Invalid input. Please provide an array of emails.");
+    }
+
+    const invalidEmails = emails.filter(email => !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email));
+    
+    if (invalidEmails.length > 0) {
+        throw new ApiError(400, `Invalid email format: ${invalidEmails.join(", ")}`);
+    }
+
+    const emailObjects = emails.map(email => ({ email }));
+
+    try {
+        const result = await AllowedEmail.insertMany(emailObjects, { ordered: false });
+
+        return res.status(200).json({
+            success: true,
+            message: `${result.length} emails added to allowed list successfully.`,
+            data: result,
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            throw new ApiError(400, "One or more emails are already in the allowed list.");
+        }
+        throw new ApiError(500, "Something went wrong. Please try again later.",error);
+    }
+});
+
+
+
+
 
 
 
@@ -811,7 +846,6 @@ export {
   registerAdmin,
   loginAdmin,
   logoutAdmin,
-  listCompanies,
   listCompanies,
   createCompany,
   getApplicantsForCompany,
@@ -825,6 +859,7 @@ export {
   getAllStudents,
   getAllCompanies,
   getAllApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  addEmailsToAllowedList
 
 }

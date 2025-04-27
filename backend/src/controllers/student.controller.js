@@ -427,7 +427,7 @@ const registerWithOtp = asyncHandler(async (req, res) => {
 
     const { email, password, username } = req.body;
 
-    if (!email || !password || !username) {
+    if (!email || !password) {
         throw new ApiError(400, "Email, Password and Username are required");
     }
 
@@ -440,7 +440,6 @@ const registerWithOtp = asyncHandler(async (req, res) => {
     const student = await Student.create({
         email,
         password, 
-        username
     });
 
     return res
