@@ -4,7 +4,7 @@ import {Admin} from "../models/admin.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import { Company} from "../models/company.model.js";
-import Application from "../models/application.model.js";
+import {Application} from "../models/application.model.js";
 import { Student } from "../models/student.model.js"
 import mongoose from "mongoose";
 import emailQueue from '../utils/emailQueue.js';

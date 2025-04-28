@@ -1,13 +1,12 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
-import {Applications} from "../models/jobApplication.models.js"
-import Company from "../models/company.model.js"
+import { Application } from "../models/application.model.js"
+import {Company} from "../models/company.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import mongoose from "mongoose"
 import { sendEmail } from "../utils/Nodemailer.js"
-import { User } from "../models/user.model.js"
 import { Student } from "../models/student.model.js"
 
 const applyToJob = asyncHandler(async (req, res) => {
@@ -32,24 +31,29 @@ const applyToJob = asyncHandler(async (req, res) => {
         throw new ApiError(400,"company not found")
     }
 
-    const existingApplication = await Applications.findOne({
+    const student = await Student.findById(req.student._id);
+
+    if (!student) {
+        return res.status(404).json({ success: false, message: "student not found" });
+    }
+
+    const existingApplication = await Application.findOne({
         companyId,
-        studentId : req.student._id
+        studentId : req.student._id,
     })
 
     if(existingApplication){
         throw new ApiError(400,"already applied to this company")
     }
 
-    const newApplication = await Applications.create({
+    const newApplication = await Application.create({
         companyId,
-        studentId : req.student._id
+        studentId : req.student._id,
+        resume:resume.url
+
     })
 
-    const student = await Student.findById(req.student._id);
-    if (!student) {
-        return res.status(404).json({ success: false, message: "student not found" });
-    }
+    
 
     // const emailSubject = `Applied to ${job.title}`;
     // const emailText =
@@ -75,7 +79,7 @@ const getApplicant = asyncHandler(async (req, res) => {
 
     const { companyId } = req.params;
     
-    const studentForCompany = await Applications.aggregate([
+    const studentForCompany = await Application.aggregate([
         {
             $match : { companyId : new mongoose.Types.ObjectId(companyId)}
         },
@@ -94,9 +98,10 @@ const getApplicant = asyncHandler(async (req, res) => {
             $project:{
                 _id : 1,
                 "studentDetails._id" : 1,
-                "studentDetails.username" : 1,
-                "studentDetails.email" : 1,
-                "studentDetails.fullname" : 1,
+                "studentDetails.fullName" : 1,
+                "studentDetails.collegeEmail" : 1,
+                "studentDetails.personalEmail" : 1,
+                "studentDetails.resume" : 1,
                 "status" : 1,
             },
         },
@@ -105,20 +110,21 @@ const getApplicant = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(new ApiResponse(200, applicantForJobs, "students Retrive Sucessfully"))
+    .json(new ApiResponse(200, studentForCompany, "students Retrive Sucessfully"))
 })
 
 const getCompany = asyncHandler(async (req, res) => {
 
     const  studentId  = req.student._id
     
-    const appliedCompaniesOfStudent = await Applications.aggregate([
+    
+    const appliedCompaniesOfStudent = await Application.aggregate([
         {
             $match : { studentId : new mongoose.Types.ObjectId(studentId)}
         },
         {   
             $lookup : {
-                from : "company",
+                from : "companies",
                 localField : "companyId",
                 foreignField : "_id",
                 as : "companyDetails"
@@ -131,9 +137,9 @@ const getCompany = asyncHandler(async (req, res) => {
             $project:{
                 _id : 1,
                 "companyDetails._id" : 1,
-                "companyDetails.title" : 1,
-                "companyDetails.location" : 1,//change what to project as needed 
-                "companyDetails.overview" : 1,
+                "companyDetails.name" : 1,
+                "companyDetails.jobRole" : 1,//change what to project as needed 
+                "companyDetails.description" : 1,
                 "companyDetails.status" :1,
                 status:1
             },
@@ -142,7 +148,7 @@ const getCompany = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(new ApiResponse(200, jobsOfApplicant, "companies Retrive Sucessfully"))
+    .json(new ApiResponse(200, appliedCompaniesOfStudent, "companies Retrive Sucessfully"))
 })
 
 
@@ -154,7 +160,7 @@ const changeApplicationState = asyncHandler(async(req, res) => {
     
 
     // Update the status in the database
-    const updatedApplication = await Applications.findOneAndUpdate(
+    const updatedApplication = await Application.findOneAndUpdate(
         { companyId, studentId }, 
         { $set: { status: status } }, 
         { new: true } 

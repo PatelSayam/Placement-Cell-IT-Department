@@ -7,6 +7,7 @@ import {
 } from "../controllers/application.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"; 
 import { verifyJWTAdmin } from "../middlewares/admin.auth.middleware.js"; 
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router()
 

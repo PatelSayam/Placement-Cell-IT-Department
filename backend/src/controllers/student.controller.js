@@ -252,6 +252,7 @@ const getCurrentStudent = asyncHandler(async(req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
+    
     const { body, files } = req;
 
 
