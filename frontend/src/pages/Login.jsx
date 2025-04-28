@@ -23,8 +23,9 @@ const Login = () => {
       });
       // Assuming the API returns user data in response.data
       const userData = response.data.data.student;
-      console.log(userData)
-  
+      // console.log(response.data)
+      localStorage.setItem("accessToken", response.data.data.accessToken)
+      localStorage.setItem("refreshToken", response.data.data.refreshToken)
       dispatch(login(userData)); // Store the actual user in redux
       navigate("/dashboard"); // Navigate to dashboard after login
     } catch (error) {

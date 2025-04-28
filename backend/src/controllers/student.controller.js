@@ -255,7 +255,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
     const { body, files } = req;
     console.log("USER BODY REQ ", body)
-
+    const userId = body.userId;
     const updateData = {};
 
 
@@ -371,7 +371,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 
     const updatedStudent = await Student.findByIdAndUpdate(
-        req.student._id,
+        userId,
         { $set: updateData },
         { new: true }
     ).select("-password");

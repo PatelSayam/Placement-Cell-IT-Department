@@ -67,7 +67,7 @@ router.route("/get-current-student").post(verifyJWT, getCurrentStudent)
 router.route("/view-profile").post(viewProfile)
 router.route("/get-all-students").get(getAllStudents)
 
-router.route("/update-account-details").post( verifyJWT, 
+router.route("/update-account-details").post( 
     upload.fields(
         [
             { 

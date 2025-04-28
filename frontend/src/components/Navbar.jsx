@@ -2,9 +2,10 @@ import { useSelector, useDispatch } from "react-redux"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { logout } from "../store/authSlice" // example action
+import axios from 'axios';
 
 export default function Navbar() {
-  const user = useSelector((state) => state.auth.user) // Assuming `user` has a `role`
+  const user = useSelector((state) => state.auth.userData);  // Assuming `user` has a `role`
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -13,11 +14,27 @@ export default function Navbar() {
     name: "Test User",
     role: "student", // Change to "admin" to test admin view
   }
+  console.log(user)
 
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate("/login")
-  }
+  const handleLogout = async () => {
+    try {
+      // 1. Logout from the backend
+      axios.post(`${import.meta.env.VITE_API_URL}/student/logout`, {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+        }
+      });
+      
+      // 2. Dispatch logout action to clear user data in Redux
+      dispatch(logout());
+  
+      // 3. Redirect to the login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      alert('❌ Something went wrong during logout.');
+    }
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -92,7 +109,7 @@ export default function Navbar() {
                     />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{mockUser?.name}</span>
+                <span className="text-sm font-medium text-gray-700">{user?.fullName}</span>
                 <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full">
                   {mockUser?.role === "admin" ? "Admin" : "Student"}
                 </span>

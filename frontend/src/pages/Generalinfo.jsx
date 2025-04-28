@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useSelector } from "react-redux"
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 const GeneralInfo = () => {
   const [form, setForm] = useState({
@@ -68,7 +69,7 @@ const GeneralInfo = () => {
 
   const user = useSelector((state) => state.auth.userData);
   console.log("USER",user._id)
-
+  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
   
@@ -80,37 +81,104 @@ const GeneralInfo = () => {
     try {
       const formData = new FormData();
   
-      // Append all form fields
+      // Personal Information
       formData.append('collegeEmail', form.collegeEmail);
       formData.append('personalEmail', form.personalEmail);
       formData.append('rollNo', form.rollNo);
+      formData.append('collegeId', form.collegeId);
       formData.append('fullName', form.fullName);
       formData.append('gender', form.gender);
-      formData.append('contactNumber', form.contactNumber);
-      formData.append('parentContactNumber', form.parentContactNumber);
-      formData.append('sscResult', form.sscResult);
-      formData.append('sscPassingYear', form.sscPassingYear);
-      formData.append('hscResult', form.hscResult);
-      formData.append('hscPassingYear', form.hscPassingYear);
-      formData.append('addressLine', form.addressLine);
-      formData.append('city', form.city);
-      formData.append('pincode', form.pincode);
-      formData.append('activeBacklogs', form.activeBacklogs);
-      formData.append('totalBacklogs', form.totalBacklogs);
-      formData.append('skills', form.skills); // comma-separated string
-      formData.append('preferredRoles', form.preferredRoles); // comma-separated string
-      formData.append('github', form.github);
-      formData.append('linkedin', form.linkedin);
+      formData.append('dob', new Date(form.dob).toISOString());
+      
+      // Educational Background
+      formData.append('ssc[result]', form.sscResult);
+      formData.append('ssc[passingYear]', form.sscYear);
+      formData.append('ssc[board]', form.sscBoard);
+      
+      formData.append('hsc[result]', form.hscResult);
+      formData.append('hsc[passingYear]', form.hscYear);
+      formData.append('hsc[board]', form.hscBoard);
+      
+      if (form.diplomaResult) {
+        formData.append('diploma[result]', form.diplomaResult);
+        formData.append('diploma[boardOrUniversity]', form.diplomaBoard);
+        formData.append('diploma[passingYear]', form.diplomaYear);
+      }
   
-      // For projects (Array of objects), stringify before appending
-      formData.append('projects', JSON.stringify(form.projects));
-      formData.append('userId', user._id)
+      // Contact Information
+      formData.append('contactNumber', form.studentContact);
+      formData.append('parentContactNumber', form.parentContact);
+      formData.append('parentEmail', form.parentEmail);
+      formData.append('permanentAddress[addressLine]', form.address);
+      formData.append('permanentAddress[city]', form.city);
+      formData.append('permanentAddress[pincode]', form.pincode);
+  
+      // Academic Status
+      formData.append('backlogs[active]', form.activeBacklogs);
+      formData.append('backlogs[total]', form.totalBacklogs);
+      formData.append('breakYears[count]', form.breakYears);
+      formData.append('breakYears[reason]', form.breakReason);
+      formData.append('category', form.category);
+      formData.append('admissionQuota', form.admissionQuota);
+  
+      // Skills & Projects - Convert comma-separated to arrays
+      formData.append('skills', form.skills.split(',').map(s => s.trim()));
+      formData.append('preferredRoles', form.preferredRoles.split(',').map(s => s.trim()));
+      
+      // Projects - Create array with single project
+      if (form.projectTitle) {
+        formData.append('projects', JSON.stringify([{
+          title: form.projectTitle,
+          description: form.projectDetails
+        }]));
+      }
+      
+      // Certifications - Convert comma-separated to array
+      if (form.certifications) {
+        formData.append('certifications', form.certifications.split(',').map(c => c.trim()));
+      }
+  
+      // Social Links
+      formData.append('socialLinks[github]', form.github);
+      formData.append('socialLinks[linkedin]', form.linkedin);
+      formData.append('socialLinks[hackerrank]', form.hackerrank);
+      formData.append('socialLinks[leetcode]', form.leetcode);
+      formData.append('socialLinks[codechef]', form.codechef);
+  
+      // Append files if they exist
+      if (files.passportPhoto) {
+        formData.append('profilePhoto', files.passportPhoto);
+      }
+      if (files.sscMarksheet) {
+        formData.append('sscMarksheet', files.sscMarksheet);
+      }
+      if (files.hscMarksheet) {
+        formData.append('hscMarksheet', files.hscMarksheet);
+      }
+      if (files.diplomaDegree) {
+        formData.append('diplomaDegree', files.diplomaDegree);
+      }
+      if (files.resume) {
+        formData.append('resume', files.resume);
+      }
+  
+      // User reference
+      formData.append('userId', user._id);
   
       // Make the API request
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/update-account-details`, formData);
-
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/student/update-account-details`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+  
       if (response.status === 200) {
         alert("🎉 Info submitted successfully!");
+        navigate("/home");
       } else {
         console.error(response.data);
         alert(`❌ Failed to submit: ${response.data.message || 'Something went wrong.'}`);
