@@ -388,15 +388,17 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const viewProfile = asyncHandler(async(req, res) => {
 
-    const {personalEmail} = req.body
+    const {personalEmail, _id} = req.body
     console.log(req.body);
+    console.log(_id);
     
-
-    if (!personalEmail) {
-        throw new ApiError(400, "All fields are required")
+    if(!_id){
+        if (!personalEmail) {
+            throw new ApiError(400, "All fields are required")
+        }
     }
 
-    const student = await Student.findOne({ personalEmail })
+    const student = await Student.findOne({ $or: [{personalEmail},{_id}] })
 
     if(!student){
         throw new ApiError(404,"Student does not exist")
