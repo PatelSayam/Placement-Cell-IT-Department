@@ -122,4 +122,4 @@ studentSchema.methods.generateRefreshToken = function () {
   );
 };
 
-export const Student = mongoose.model('Student',userSchema)
+export const Student = mongoose.model('Student',studentSchema)

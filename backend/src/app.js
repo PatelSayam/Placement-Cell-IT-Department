@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser'
 
 const app = express()
 
+app.set('trust proxy', 1)
+
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true
@@ -16,10 +18,11 @@ app.use(cookieParser())
 
 // routes import 
 
-//import userRouter from "./routes/user.routes.js"
-
+import studentRouter from "./routes/student.routes.js"
+import adminRouter from "./routes/admin.routes.js"
 // routes declaration 
 
-//app.use("/v1/users",userRouter)
+app.use("/v1/student",studentRouter)
+app.use("/v1/admin",adminRouter)
 
 export { app }

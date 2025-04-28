@@ -3,12 +3,12 @@ import {ApiError} from "../utils/ApiError.js"
 import {Admin} from "../models/admin.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
-import {Company} from "../../models/company.model.js";
-import Application from "../../models/application.model.js";
-import { enqueueEmailJob } from "../../queues/emailQueue.js";
+import { Company} from "../models/company.model.js";
+import Application from "../models/application.model.js";
 import { Student } from "../models/student.model.js"
 import mongoose from "mongoose";
 import emailQueue from '../utils/emailQueue.js';
+import {AllowedEmail} from "../models/allowedEmails.model.js";
 
 
 
@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens =( async (userId) => {
         admin.refreshToken = refreshToken
         await admin.save({validateBeforeSave:false})
 
-        return {accessToken,refreshToken}
+        return { accessToken, refreshToken }
 
 
     } catch (error) {
@@ -30,41 +30,27 @@ const generateAccessAndRefreshTokens =( async (userId) => {
 })
 
 const registerAdmin = asyncHandler( async (req, res) => {
-    const {username, email, password } = req.body
-    console.log(req.body)
-    console.log(email);
-   
-    
+    const { email, password } = req.body
 
     if(
-        [username,email,password].some((field) => field?.trim() === "")
+        [email,password].some((field) => field?.trim() === "")
     ){
         throw new ApiError(400,"all fields are requried")
     }
     
-    const existedAdmin = await Admin.findOne({
-        $or: [{email},{username}]
-    })
+    const existedAdmin = await Admin.findOne({ email })
 
     if(existedAdmin){
         throw new ApiError(400,"user already exist")
     }
-    console.log("errrrrrrorrrr!!!!!!");
-    console.log(username);
-    console.log(email);
-    console.log(password);
-    console.log(req.files);
-    
-
    
     const admin = await Admin.create({
-        username,
         email,
         password,
     })
 
     if(!admin){
-        console.log("nothing ");
+        console.log("error while registering admin ");
         
     }
     
@@ -83,18 +69,14 @@ const registerAdmin = asyncHandler( async (req, res) => {
 })
 
 const loginAdmin = asyncHandler( async(req, res) => {
-    const {email, username, password} = req.body
-
-    //console.log(req.body);
+    const {email, password} = req.body
     
 
-    if(!(email || username)){
-        throw new ApiError(400,"email or username is requried")
+    if(!(email)){
+        throw new ApiError(400,"email is requried")
     }
 
-    const admin = await Admin.findOne({
-        $or: [{username},{email}]
-    })
+    const admin = await Admin.findOne({ email })
 
     if(!admin){
         throw new ApiError(404,"user does not exist")
@@ -113,10 +95,7 @@ const loginAdmin = asyncHandler( async(req, res) => {
     const options = {
         httpOnly: true,
         secure: true
-    }
-
-    //console.log(admin);
-    
+    }    
 
     return res
     .status(200)
@@ -801,6 +780,41 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
 });
 
 
+const addEmailsToAllowedList = asyncHandler(async (req, res) => {
+
+    const { emails } = req.body; 
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        throw new ApiError(400, "Invalid input. Please provide an array of emails.");
+    }
+
+    const invalidEmails = emails.filter(email => !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email));
+    
+    if (invalidEmails.length > 0) {
+        throw new ApiError(400, `Invalid email format: ${invalidEmails.join(", ")}`);
+    }
+
+    const emailObjects = emails.map(email => ({ email }));
+
+    try {
+        const result = await AllowedEmail.insertMany(emailObjects, { ordered: false });
+
+        return res.status(200).json({
+            success: true,
+            message: `${result.length} emails added to allowed list successfully.`,
+            data: result,
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            throw new ApiError(400, "One or more emails are already in the allowed list.");
+        }
+        throw new ApiError(500, "Something went wrong. Please try again later.",error);
+    }
+});
+
+
+
+
 
 
 
@@ -811,7 +825,6 @@ export {
   registerAdmin,
   loginAdmin,
   logoutAdmin,
-  listCompanies,
   listCompanies,
   createCompany,
   getApplicantsForCompany,
@@ -825,6 +838,7 @@ export {
   getAllStudents,
   getAllCompanies,
   getAllApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  addEmailsToAllowedList
 
 }

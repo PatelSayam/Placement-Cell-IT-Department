@@ -7,7 +7,10 @@ import {
     logoutStudent, 
     refreshAccessToken, 
     registerStudent, 
+    registerWithOtp, 
+    sendOtp, 
     updateAccountDetails, 
+    verifyOtp, 
     viewProfile 
 } from "../controllers/student.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -39,7 +42,8 @@ router.route("/register").post(
                 maxCount: 1 
             }
         ]
-    ),registerStudent)
+    ),registerStudent
+)
 
 router.route("/login").post(loginStudent)
 
@@ -76,7 +80,12 @@ router.route("/update-account-details").post( verifyJWT,
                 maxCount: 1 
             }
         ]
-    ), updateAccountDetails)
+    ), updateAccountDetails
+)
+
+router.route("/send-otp").post(sendOtp)
+router.route("/verify-otp").post(verifyOtp);
+router.route("/register-with-otp").post(registerWithOtp);
 
 
 

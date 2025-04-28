@@ -12,35 +12,38 @@ import {
     getRealTimeStats,
     getRealTimeStatsYearWise,
     getMonthWisePlacementStats,
-    getDashboardStats
+    getDashboardStats,
+    addEmailsToAllowedList
 } from "../controllers/admin.controller.js";
-import { verifyAdmin } from "../middlewares/auth.middleware.js"; // Assuming you have auth middleware
+import { verifyJWTAdmin } from "../middlewares/admin.auth.middleware.js"; // Assuming you have auth middleware
 
 const router = Router()
 
 // Auth Routes
 router.post("/register", registerAdmin);
 router.post("/login", loginAdmin);
-router.post("/logout", verifyAdmin, logoutAdmin);
+router.post("/logout", verifyJWTAdmin, logoutAdmin);
 
 // Company Management
-router.get("/companies", verifyAdmin, listCompanies);
-router.post("/companies", verifyAdmin, createCompany);
-router.patch("/companies/:companyId/delist", verifyAdmin, delistCompany);
+// router.get("/companies", verifyJWTAdmin, listCompanies);
+router.get("/companies", listCompanies);
+router.post("/companies", verifyJWTAdmin, createCompany);
+router.patch("/companies/:companyId/delist", verifyJWTAdmin, delistCompany);
 
 // Applications & Students
-router.get("/companies/:companyId/applicants", verifyAdmin, getApplicantsForCompany);
-router.get("/companies/:companyId/eligible-students", verifyAdmin, getEligibleStudents);
+router.get("/companies/:companyId/applicants", verifyJWTAdmin, getApplicantsForCompany);
+router.get("/companies/:companyId/eligible-students", verifyJWTAdmin, getEligibleStudents);
 
 // Notify Students
-router.post("/notify", verifyAdmin, notifyStudents);
+router.post("/notify", verifyJWTAdmin, notifyStudents);
 
 // Statistics Routes
-router.get("/stats/realtime", verifyAdmin, getRealTimeStats);
-router.get("/stats/realtime/yearwise", verifyAdmin, getRealTimeStatsYearWise);
-router.get("/stats/monthwise", verifyAdmin, getMonthWisePlacementStats);
+router.get("/stats/realtime", verifyJWTAdmin, getRealTimeStats);
+router.get("/stats/realtime/yearwise", verifyJWTAdmin, getRealTimeStatsYearWise);
+router.get("/stats/monthwise", verifyJWTAdmin, getMonthWisePlacementStats);
 
 // Dashboard
-router.get("/dashboard", verifyAdmin, getDashboardStats);
+router.get("/dashboard", verifyJWTAdmin, getDashboardStats);
+router.post("/add-emails", addEmailsToAllowedList);
 
 export default router;
