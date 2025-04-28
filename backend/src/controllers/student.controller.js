@@ -252,7 +252,7 @@ const getCurrentStudent = asyncHandler(async(req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    
+
     const { body, files } = req;
 
 
@@ -388,15 +388,13 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const viewProfile = asyncHandler(async(req, res) => {
 
-    const {email, fullname} = req.body
+    const {email} = req.body
 
-    if (!fullname || !email) {
+    if (!email) {
         throw new ApiError(400, "All fields are required")
     }
 
-    const student = await Student.findOne({
-        $or: [{email},{fullname}]
-    })
+    const student = await Student.findOne({ email })
 
     if(!student){
         throw new ApiError(404,"Student does not exist")
@@ -404,7 +402,7 @@ const viewProfile = asyncHandler(async(req, res) => {
 
     return res
     .status(200)
-    .json(new ApiResponse(200, user, "Student details fetched successfully"))
+    .json(new ApiResponse(200, student, "Student details fetched successfully"))
 
 });
 
@@ -514,7 +512,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
 const registerWithOtp = asyncHandler(async (req, res) => {
 
-    const { email, password, username } = req.body;
+    const { email, password } = req.body;
 
     if (!email || !password) {
         throw new ApiError(400, "Email, Password and Username are required");
