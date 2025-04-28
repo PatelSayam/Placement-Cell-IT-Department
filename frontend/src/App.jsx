@@ -5,7 +5,7 @@ import GeneralInfo from './pages/Generalinfo';
 import StudentHome from './pages/StudentHome';
 import CompanyDetails from './pages/CompanyDetails';
 import AppliedCompanies from './pages/AppliedCompanies';
-import StudentProfile from './pages/ StudentProfile';
+import StudentProfile from './pages/StudentProfile';
 import Login from './pages/Login';
 import AdminDashboard from './pages/Dashboard';
 import StudentsManagement from './pages/StudentsManagement';

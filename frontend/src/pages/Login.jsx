@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
 import { useNavigate, Link } from "react-router-dom";
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -9,21 +10,27 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // For now, simulate a login — later replace with real API call
+  const handleLogin = async () => {
     if (!email || !password) {
       alert("Please fill all fields.");
       return;
     }
-
-    const dummyUser = {
-      email,
-      name: "John Doe",
-      role: "student",
-    };
-
-    dispatch(login(dummyUser)); // Store user in redux
-    navigate("/dashboard"); // Navigate to dashboard after login
+  
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/login`, {
+        email,
+        password,
+      });
+      // Assuming the API returns user data in response.data
+      const userData = response.data.data.student;
+      console.log(userData)
+  
+      dispatch(login(userData)); // Store the actual user in redux
+      navigate("/dashboard"); // Navigate to dashboard after login
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed. Please check your credentials and try again.");
+    }
   };
 
   return (
