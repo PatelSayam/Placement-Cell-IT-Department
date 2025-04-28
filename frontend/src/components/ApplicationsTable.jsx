@@ -1,3 +1,5 @@
+"use client"
+
 const ApplicationsTable = ({ applications, onViewDetails, onUpdateStatus }) => {
   return (
     <div className="overflow-x-auto">
@@ -33,33 +35,47 @@ const ApplicationsTable = ({ applications, onViewDetails, onUpdateStatus }) => {
             </tr>
           ) : (
             applications.map((application) => (
-              <tr key={application.id} className="hover:bg-gray-50">
+              <tr key={application._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 font-medium">{application.studentName.charAt(0)}</span>
+                      <span className="text-indigo-600 font-medium">
+                        {application.studentDetails?.fullName?.charAt(0) || "?"}
+                      </span>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{application.studentName}</div>
-                      <div className="text-sm text-gray-500">{application.studentId}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {application.studentId?.fullName || "N/A"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {application.studentId.fullName || application.studentDetails?._id}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{application.companyName}</div>
+                  <div className="text-sm text-gray-900">
+                    {application.companyId?.name || application.companyId._id || "N/A"}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{application.role}</div>
+                  <div className="text-sm text-gray-900">
+                    {application.companyDetails?.jobRole || application.role || "N/A"}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{application.appliedDate}</div>
+                  <div className="text-sm text-gray-900">
+                    {application.appliedDate
+                      ? new Date(application.appliedDate).toLocaleDateString()
+                      : new Date(application.createdAt || Date.now()).toLocaleDateString()}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      application.status === "Selected"
+                      application.status === "PLACED"
                         ? "bg-green-100 text-green-800"
-                        : application.status === "Rejected"
+                        : application.status === "REJECTED"
                           ? "bg-red-100 text-red-800"
                           : "bg-yellow-100 text-yellow-800"
                     }`}
@@ -76,12 +92,12 @@ const ApplicationsTable = ({ applications, onViewDetails, onUpdateStatus }) => {
                   </button>
                   <select
                     value={application.status}
-                    onChange={(e) => onUpdateStatus(application.id, e.target.value)}
+                    onChange={(e) => onUpdateStatus(application.companyId._id, application.studentId._id, e.target.value)}
                     className="text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent"
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Selected">Selected</option>
-                    <option value="Rejected">Rejected</option>
+                    <option value="Pending">PENDING</option>
+                    <option value="Selected">SELECTED</option>
+                    <option value="Rejected">REJECTED</option>
                   </select>
                 </td>
               </tr>

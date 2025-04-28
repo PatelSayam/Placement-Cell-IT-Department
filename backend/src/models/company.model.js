@@ -14,7 +14,6 @@ const companySchema = new mongoose.Schema({
   deadline: Date,
   status: {
     type: String,
-    enum: ['active', 'delisted',],
     default: 'active'
   },
   year: Number,

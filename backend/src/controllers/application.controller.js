@@ -190,12 +190,30 @@ const changeApplicationState = asyncHandler(async(req, res) => {
         .json(new ApiResponse(200, updatedApplication, "Status updated successfully"));
 }); // same controller also present in admin controllers file
 
+const getAllApplications = asyncHandler(async (req, res) => {
+    const applications = await Application.find()
+      .populate('companyId', 'name')   // populate companyId with only 'name' field
+      .populate('studentId', 'fullName'); // populate studentId with only 'fullName' field
+  
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          applications,
+          "applications retrieved successfully"
+        )
+      );
+  });
+  
+
 
 
 export {
     getApplicant,
     applyToJob,
     getCompany,
-    changeApplicationState
+    changeApplicationState,
+    getAllApplications
 }
 

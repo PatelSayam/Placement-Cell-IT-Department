@@ -1,151 +1,52 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import StudentFilters from "../components/StudentFilters"
 import StudentTable from "../components/StudentTable"
 import StudentDetailsModal from "../components/StudentDetailsModal"
 
-// Mock data for students
-const mockStudents = [
-  {
-    id: 1,
-    name: "Aditya Sharma",
-    rollNo: "CS2021001",
-    branch: "Computer Science",
-    year: "4th Year",
-    cgpa: 9.2,
-    placementStatus: "Placed",
-    company: "Google",
-    package: "24 LPA",
-    email: "aditya.s@example.com",
-    phone: "9876543210",
-    skills: ["React", "Node.js", "Python", "Machine Learning"],
-    applications: 4,
-    offers: 2,
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    rollNo: "EC2021015",
-    branch: "Electronics",
-    year: "4th Year",
-    cgpa: 8.7,
-    placementStatus: "Placed",
-    company: "Microsoft",
-    package: "21 LPA",
-    email: "priya.p@example.com",
-    phone: "9876543211",
-    skills: ["VLSI", "Embedded Systems", "C++", "IoT"],
-    applications: 5,
-    offers: 1,
-  },
-  {
-    id: 3,
-    name: "Rahul Verma",
-    rollNo: "ME2021032",
-    branch: "Mechanical",
-    year: "4th Year",
-    cgpa: 8.1,
-    placementStatus: "Not Placed",
-    company: null,
-    package: null,
-    email: "rahul.v@example.com",
-    phone: "9876543212",
-    skills: ["AutoCAD", "SolidWorks", "Project Management"],
-    applications: 6,
-    offers: 0,
-  },
-  {
-    id: 4,
-    name: "Sneha Gupta",
-    rollNo: "CS2021042",
-    branch: "Computer Science",
-    year: "4th Year",
-    cgpa: 9.5,
-    placementStatus: "Placed",
-    company: "Amazon",
-    package: "26 LPA",
-    email: "sneha.g@example.com",
-    phone: "9876543213",
-    skills: ["Java", "Spring Boot", "AWS", "Microservices"],
-    applications: 3,
-    offers: 3,
-  },
-  {
-    id: 5,
-    name: "Vikram Singh",
-    rollNo: "IT2021056",
-    branch: "Information Technology",
-    year: "4th Year",
-    cgpa: 8.4,
-    placementStatus: "Placed",
-    company: "Infosys",
-    package: "10 LPA",
-    email: "vikram.s@example.com",
-    phone: "9876543214",
-    skills: ["JavaScript", "React", "SQL", "MongoDB"],
-    applications: 8,
-    offers: 1,
-  },
-  {
-    id: 6,
-    name: "Neha Kapoor",
-    rollNo: "CS2021078",
-    branch: "Computer Science",
-    year: "4th Year",
-    cgpa: 7.9,
-    placementStatus: "Not Placed",
-    company: null,
-    package: null,
-    email: "neha.k@example.com",
-    phone: "9876543215",
-    skills: ["Python", "Data Analysis", "Machine Learning"],
-    applications: 4,
-    offers: 0,
-  },
-  {
-    id: 7,
-    name: "Arjun Reddy",
-    rollNo: "EE2021089",
-    branch: "Electrical",
-    year: "4th Year",
-    cgpa: 8.8,
-    placementStatus: "Placed",
-    company: "Tata Power",
-    package: "12 LPA",
-    email: "arjun.r@example.com",
-    phone: "9876543216",
-    skills: ["Power Systems", "Electrical Design", "PLC Programming"],
-    applications: 3,
-    offers: 1,
-  },
-  {
-    id: 8,
-    name: "Kavita Desai",
-    rollNo: "CH2021102",
-    branch: "Chemical",
-    year: "4th Year",
-    cgpa: 9.0,
-    placementStatus: "Placed",
-    company: "Reliance Industries",
-    package: "14 LPA",
-    email: "kavita.d@example.com",
-    phone: "9876543217",
-    skills: ["Process Engineering", "MATLAB", "Chemical Simulation"],
-    applications: 2,
-    offers: 1,
-  },
-]
-
 const StudentsManagement = () => {
-  const [students, setStudents] = useState(mockStudents)
-  const [filteredStudents, setFilteredStudents] = useState(mockStudents)
+  const [students, setStudents] = useState([])
+  const [filteredStudents, setFilteredStudents] = useState([])
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     branch: "All",
     placementStatus: "All",
     year: "All",
   })
+
+  // Fetch all students on component mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch("http://localhost:8000/v1/student/get-all-students")
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        console.log("API Response:", data.data)
+        
+        if (data.statusCode === 200 && data.data) {
+          setStudents(data.data)
+          setFilteredStudents(data.data)
+        } else {
+          throw new Error(data.message || "Failed to fetch students")
+        }
+      } catch (err) {
+        console.error("Error fetching students:", err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStudents()
+  }, [])
 
   // Function to handle search and filtering
   const handleSearch = (term) => {
@@ -167,9 +68,10 @@ const StudentsManagement = () => {
     if (term) {
       result = result.filter(
         (student) =>
-          student.name.toLowerCase().includes(term.toLowerCase()) ||
-          student.rollNo.toLowerCase().includes(term.toLowerCase()) ||
-          student.email.toLowerCase().includes(term.toLowerCase()),
+          (student.name && student.name.toLowerCase().includes(term.toLowerCase())) ||
+          (student.rollNo && student.rollNo.toLowerCase().includes(term.toLowerCase())) ||
+          (student.personalEmail && student.personalEmail.toLowerCase().includes(term.toLowerCase())) ||
+          (student.collegeEmail && student.collegeEmail.toLowerCase().includes(term.toLowerCase())),
       )
     }
 
@@ -192,9 +94,38 @@ const StudentsManagement = () => {
   }
 
   // Function to view student details
-  const viewStudentDetails = (student) => {
-    setSelectedStudent(student)
-    setIsModalOpen(true)
+  const viewStudentDetails = async (student) => {
+    try {
+      // Make sure we're using personalEmail for the API call
+      if (!student.personalEmail) {
+        throw new Error("Personal email is missing for this student")
+      }
+      
+      const response = await fetch("http://localhost:8000/v1/student/view-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ personalEmail: student.personalEmail }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Student details response:", data)
+      
+      if (data.statusCode === 200 && data.data) {
+        setSelectedStudent(data.data)
+        setIsModalOpen(true)
+      } else {
+        throw new Error(data.message || "Failed to fetch student details")
+      }
+    } catch (err) {
+      console.error("Error fetching student details:", err)
+      alert("Failed to load student details: " + err.message)
+    }
   }
 
   return (
@@ -208,7 +139,24 @@ const StudentsManagement = () => {
         <StudentFilters onSearch={handleSearch} onFilterChange={handleFilterChange} filters={filters} />
 
         <div className="mt-6 bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
-          <StudentTable students={filteredStudents} onViewDetails={viewStudentDetails} />
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+              <p className="mt-2 text-gray-600">Loading students...</p>
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              <p>Error: {error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <StudentTable students={filteredStudents} onViewDetails={viewStudentDetails} />
+          )}
         </div>
 
         {isModalOpen && (

@@ -16,15 +16,35 @@ const AddCompanyModal = ({ isOpen, onClose, onAddCompany }) => {
     locations: [],
     packages: [],
     description: "",
+    criteria: {
+      cgpa: "",
+      backlog: "No",
+      skills: []
+    },
+    deadline: "",
+    customFields: {}
   })
 
   const [newRole, setNewRole] = useState("")
   const [newLocation, setNewLocation] = useState("")
   const [newPackage, setNewPackage] = useState("")
+  const [newSkill, setNewSkill] = useState("")
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.')
+      setFormData({
+        ...formData,
+        [parent]: {
+          ...formData[parent],
+          [child]: value
+        }
+      })
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
   }
 
   const handleAddRole = () => {
@@ -48,11 +68,34 @@ const AddCompanyModal = ({ isOpen, onClose, onAddCompany }) => {
     }
   }
 
+  const handleAddSkill = () => {
+    if (newSkill.trim() !== "") {
+      setFormData({ 
+        ...formData, 
+        criteria: {
+          ...formData.criteria,
+          skills: [...formData.criteria.skills, newSkill.trim()]
+        }
+      })
+      setNewSkill("")
+    }
+  }
+
   const handleRemoveItem = (type, index) => {
-    setFormData({
-      ...formData,
-      [type]: formData[type].filter((_, i) => i !== index),
-    })
+    if (type === 'skills') {
+      setFormData({
+        ...formData,
+        criteria: {
+          ...formData.criteria,
+          skills: formData.criteria.skills.filter((_, i) => i !== index)
+        }
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [type]: formData[type].filter((_, i) => i !== index),
+      })
+    }
   }
 
   const handleSubmit = (e) => {
@@ -75,7 +118,7 @@ const AddCompanyModal = ({ isOpen, onClose, onAddCompany }) => {
 
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form onSubmit={handleSubmit}>
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[80vh] overflow-y-auto">
               <div className="sm:flex sm:items-start">
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Company</h3>
@@ -178,6 +221,17 @@ const AddCompanyModal = ({ isOpen, onClose, onAddCompany }) => {
                     </div>
 
                     <div>
+                      <label className="block text-sm font-medium text-gray-700">Deadline</label>
+                      <input
+                        type="date"
+                        name="deadline"
+                        value={formData.deadline}
+                        onChange={handleChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Upcoming Drive Date</label>
                       <input
                         type="date"
@@ -186,6 +240,68 @@ const AddCompanyModal = ({ isOpen, onClose, onAddCompany }) => {
                         onChange={handleChange}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Criteria - CGPA</label>
+                      <input
+                        type="text"
+                        name="criteria.cgpa"
+                        value={formData.criteria.cgpa}
+                        onChange={handleChange}
+                        placeholder="e.g. 7.5"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Criteria - Backlog</label>
+                      <select
+                        name="criteria.backlog"
+                        value={formData.criteria.backlog}
+                        onChange={handleChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      >
+                        <option value="No">No Backlog Allowed</option>
+                        <option value="Yes">Backlog Allowed</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Required Skills</label>
+                      <div className="flex mt-1">
+                        <input
+                          type="text"
+                          value={newSkill}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Add a required skill"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddSkill}
+                          className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {formData.criteria.skills.map((skill, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                          >
+                            {skill}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem("skills", index)}
+                              className="ml-1 text-indigo-500 hover:text-indigo-700 focus:outline-none"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
                     <div>

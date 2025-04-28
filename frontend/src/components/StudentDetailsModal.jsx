@@ -1,5 +1,5 @@
 const StudentDetailsModal = ({ student, isOpen, onClose }) => {
-  if (!isOpen) return null
+  if (!isOpen || !student) return null
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -38,44 +38,48 @@ const StudentDetailsModal = ({ student, isOpen, onClose }) => {
                 <div className="mt-4">
                   <div className="flex items-center mb-4">
                     <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-2xl text-indigo-600 font-medium">{student.name.charAt(0)}</span>
+                      <span className="text-2xl text-indigo-600 font-medium">
+                        {student.name ? student.name.charAt(0) : "?"}
+                      </span>
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold text-gray-800">{student.name}</h4>
-                      <p className="text-gray-500">{student.rollNo}</p>
+                      <h4 className="text-xl font-bold text-gray-800">{student.name || "N/A"}</h4>
+                      <p className="text-gray-500">{student.rollNo || "N/A"}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-500">Branch</p>
-                      <p className="font-medium">{student.branch}</p>
+                      <p className="font-medium">{student.branch || "N/A"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Year</p>
-                      <p className="font-medium">{student.year}</p>
+                      <p className="font-medium">{student.year || "N/A"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">CGPA</p>
-                      <p className="font-medium">{student.cgpa}</p>
+                      <p className="font-medium">{student.cgpa || "N/A"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Placement Status</p>
                       <p
-                        className={`font-medium ${student.placementStatus === "Placed" ? "text-green-600" : "text-yellow-600"}`}
+                        className={`font-medium ${
+                          student.placementStatus === "Placed" ? "text-green-600" : "text-yellow-600"
+                        }`}
                       >
-                        {student.placementStatus}
+                        {student.placementStatus || "Unknown"}
                       </p>
                     </div>
                     {student.placementStatus === "Placed" && (
                       <>
                         <div>
                           <p className="text-sm text-gray-500">Company</p>
-                          <p className="font-medium">{student.company}</p>
+                          <p className="font-medium">{student.company || "N/A"}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Package</p>
-                          <p className="font-medium">{student.package}</p>
+                          <p className="font-medium">{student.package || "N/A"}</p>
                         </div>
                       </>
                     )}
@@ -84,29 +88,35 @@ const StudentDetailsModal = ({ student, isOpen, onClose }) => {
                   <div className="mb-4">
                     <p className="text-sm text-gray-500 mb-1">Contact Information</p>
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2">
                         <div>
-                          <p className="text-xs text-gray-500">Email</p>
-                          <p className="text-sm">{student.email}</p>
+                          <p className="text-xs text-gray-500">Personal Email</p>
+                          <p className="text-sm">{student.personalEmail || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">College Email</p>
+                          <p className="text-sm">{student.collegeEmail || "N/A"}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Phone</p>
-                          <p className="text-sm">{student.phone}</p>
+                          <p className="text-sm">{student.phone || "N/A"}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-500 mb-1">Skills</p>
-                    <div className="flex flex-wrap gap-2">
-                      {student.skills.map((skill, index) => (
-                        <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
-                          {skill}
-                        </span>
-                      ))}
+                  {student.skills && student.skills.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-500 mb-1">Skills</p>
+                      <div className="flex flex-wrap gap-2">
+                        {student.skills.map((skill, index) => (
+                          <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Application Summary</p>
@@ -114,11 +124,11 @@ const StudentDetailsModal = ({ student, isOpen, onClose }) => {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <p className="text-xs text-gray-500">Total Applications</p>
-                          <p className="text-sm font-medium">{student.applications}</p>
+                          <p className="text-sm font-medium">{student.applications || 0}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Offers Received</p>
-                          <p className="text-sm font-medium">{student.offers}</p>
+                          <p className="text-sm font-medium">{student.offers || 0}</p>
                         </div>
                       </div>
                     </div>

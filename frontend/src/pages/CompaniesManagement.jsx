@@ -1,175 +1,114 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import CompanyCard from "../components/CompanyCard"
 import AddCompanyModal from "../components/AddCompanyModal"
 
-// Mock data for companies
-const mockCompanies = [
-  {
-    id: 1,
-    name: "Google",
-    logo: "https://logo.clearbit.com/google.com",
-    industry: "Technology",
-    website: "https://careers.google.com",
-    contactPerson: "Sundar Pichai",
-    email: "recruiting@google.com",
-    phone: "+1 650-253-0000",
-    status: "Active",
-    openPositions: 3,
-    totalHires: 12,
-    lastDriveDate: "2023-10-15",
-    upcomingDrive: "2024-01-20",
-    roles: ["Software Engineer", "Product Manager", "UX Designer"],
-    locations: ["Bangalore", "Hyderabad"],
-    packages: ["18-24 LPA", "24-32 LPA"],
-    description:
-      "Google LLC is an American multinational technology company that specializes in Internet-related services and products.",
-  },
-  {
-    id: 2,
-    name: "Microsoft",
-    logo: "https://logo.clearbit.com/microsoft.com",
-    industry: "Technology",
-    website: "https://careers.microsoft.com",
-    contactPerson: "Satya Nadella",
-    email: "recruiting@microsoft.com",
-    phone: "+1 425-882-8080",
-    status: "Active",
-    openPositions: 5,
-    totalHires: 15,
-    lastDriveDate: "2023-09-20",
-    upcomingDrive: "2024-02-10",
-    roles: ["Software Engineer", "Cloud Solutions Architect", "Data Scientist"],
-    locations: ["Bangalore", "Hyderabad", "Pune"],
-    packages: ["16-22 LPA", "22-30 LPA"],
-    description:
-      "Microsoft Corporation is an American multinational technology corporation that produces computer software, consumer electronics, and related services.",
-  },
-  {
-    id: 3,
-    name: "Amazon",
-    logo: "https://logo.clearbit.com/amazon.com",
-    industry: "E-commerce, Technology",
-    website: "https://www.amazon.jobs",
-    contactPerson: "Andy Jassy",
-    email: "university-recruiting@amazon.com",
-    phone: "+1 206-266-1000",
-    status: "Active",
-    openPositions: 7,
-    totalHires: 20,
-    lastDriveDate: "2023-11-05",
-    upcomingDrive: "2024-01-15",
-    roles: ["SDE", "Operations Manager", "Business Analyst", "Product Manager"],
-    locations: ["Bangalore", "Hyderabad", "Chennai"],
-    packages: ["18-26 LPA", "26-35 LPA"],
-    description:
-      "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, digital streaming, and artificial intelligence.",
-  },
-  {
-    id: 4,
-    name: "Infosys",
-    logo: "https://logo.clearbit.com/infosys.com",
-    industry: "IT Services",
-    website: "https://www.infosys.com/careers",
-    contactPerson: "Salil Parekh",
-    email: "campus.recruitment@infosys.com",
-    phone: "+91 80-2852-0261",
-    status: "Active",
-    openPositions: 100,
-    totalHires: 150,
-    lastDriveDate: "2023-10-25",
-    upcomingDrive: "2024-02-05",
-    roles: ["Systems Engineer", "Digital Specialist", "Technology Analyst"],
-    locations: ["Bangalore", "Pune", "Hyderabad", "Chennai", "Mysore"],
-    packages: ["4.5-6.5 LPA", "7-10 LPA"],
-    description:
-      "Infosys Limited is an Indian multinational information technology company that provides business consulting, information technology and outsourcing services.",
-  },
-  {
-    id: 5,
-    name: "TCS",
-    logo: "https://logo.clearbit.com/tcs.com",
-    industry: "IT Services",
-    website: "https://www.tcs.com/careers",
-    contactPerson: "Rajesh Gopinathan",
-    email: "campus.recruitment@tcs.com",
-    phone: "+91 22-6778-9999",
-    status: "Inactive",
-    openPositions: 0,
-    totalHires: 200,
-    lastDriveDate: "2023-08-15",
-    upcomingDrive: null,
-    roles: ["Assistant System Engineer", "Digital Specialist"],
-    locations: ["Mumbai", "Bangalore", "Chennai", "Hyderabad", "Pune"],
-    packages: ["3.5-7 LPA"],
-    description:
-      "Tata Consultancy Services Limited is an Indian multinational information technology services and consulting company.",
-  },
-  {
-    id: 6,
-    name: "Accenture",
-    logo: "https://logo.clearbit.com/accenture.com",
-    industry: "Consulting, Technology",
-    website: "https://www.accenture.com/careers",
-    contactPerson: "Julie Sweet",
-    email: "campus.recruitment@accenture.com",
-    phone: "+91 80-4139-0000",
-    status: "Active",
-    openPositions: 50,
-    totalHires: 80,
-    lastDriveDate: "2023-09-10",
-    upcomingDrive: "2024-03-15",
-    roles: ["Associate Software Engineer", "Technical Support", "Business Analyst"],
-    locations: ["Bangalore", "Hyderabad", "Pune", "Chennai"],
-    packages: ["4.5-8 LPA", "8-12 LPA"],
-    description:
-      "Accenture plc is an Irish-American professional services company specializing in information technology services and consulting.",
-  },
-]
-
 const CompaniesManagement = () => {
-  const [companies, setCompanies] = useState(mockCompanies)
+  const [companies, setCompanies] = useState([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch all companies on component mount
+  useEffect(() => {
+    fetchCompanies()
+  }, [])
+
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch("http://localhost:8000/v1/admin/companies")
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.statusCode === 200 && data.data) {
+        setCompanies(data.data)
+      } else {
+        throw new Error(data.message || "Failed to fetch companies")
+      }
+    } catch (err) {
+      console.error("Error fetching companies:", err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Filter companies based on search term and status
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.industry.toLowerCase().includes(searchTerm.toLowerCase())
+      (company.name && company.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (company.industry && company.industry.toLowerCase().includes(searchTerm.toLowerCase()))
+    
     const matchesStatus = statusFilter === "All" || company.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
 
   // Function to add a new company
-  const handleAddCompany = (newCompany) => {
-    // In a real app, this would be an API call
-    // POST /api/companies
-    const companyWithId = {
-      ...newCompany,
-      id: companies.length + 1,
-      totalHires: 0,
-      lastDriveDate: null,
-    }
+  const handleAddCompany = async (newCompany) => {
+    try {
+      const response = await fetch("http://localhost:8000/v1/admin/companies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`, 
+        },
+        body: JSON.stringify(newCompany),
+      })
+      //eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODBmMjdhYjUwZTliYTM2MTExOWU2NWIiLCJlbWFpbCI6InZpcmFsc2hhaEBkZHUuYWMuaW4iLCJpYXQiOjE3NDU4NjYxMjksImV4cCI6MTc0NjQ3MDkyOX0.R1dsiyM3va4HcCi2_uLdQ3Y4pxzYUYLxwITNp6QviLo
 
-    setCompanies([...companies, companyWithId])
-    setIsAddModalOpen(false)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.statusCode === 201 && data.data) {
+        // Refresh the companies list after adding a new one
+        fetchCompanies()
+        setIsAddModalOpen(false)
+      } else {
+        throw new Error(data.message || "Failed to add company")
+      }
+    } catch (err) {
+      console.error("Error adding company:", err)
+      alert("Failed to add company: " + err.message)
+    }
   }
 
-  // Function to toggle company status
-  const toggleCompanyStatus = (id) => {
-    // In a real app, this would be an API call
-    // PATCH /api/companies/{id}
-    setCompanies(
-      companies.map((company) => {
-        if (company.id === id) {
-          const newStatus = company.status === "Active" ? "Inactive" : "Active"
-          return { ...company, status: newStatus }
-        }
-        return company
-      }),
-    )
+  // Function to delist (delete) a company
+  const handleDelistCompany = async (companyId) => {
+    if (!confirm("Are you sure you want to delist this company?")) {
+      return
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:8000/v1/admin/companies/${companyId}/delist`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.statusCode === 200) {
+        // Refresh the companies list after delisting
+        fetchCompanies()
+      } else {
+        throw new Error(data.message || "Failed to delist company")
+      }
+    } catch (err) {
+      console.error("Error delisting company:", err)
+      alert("Failed to delist company: " + err.message)
+    }
   }
 
   return (
@@ -236,34 +175,55 @@ const CompaniesManagement = () => {
           </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompanies.map((company) => (
-            <CompanyCard key={company.id} company={company} onToggleStatus={toggleCompanyStatus} />
-          ))}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p>Error: {error}</p>
+            <button 
+              onClick={fetchCompanies} 
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCompanies.map((company) => (
+              <CompanyCard 
+                key={company._id} 
+                company={company} 
+                onClick={() => {}} 
+                onDelete={() => handleDelistCompany(company._id)}
+              />
+            ))}
 
-          {filteredCompanies.length === 0 && (
-            <div className="col-span-full bg-white rounded-xl shadow-md p-8 text-center border border-indigo-100">
-              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-indigo-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
+            {filteredCompanies.length === 0 && (
+              <div className="col-span-full bg-white rounded-xl shadow-md p-8 text-center border border-indigo-100">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8 text-indigo-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">No Companies Found</h3>
+                <p className="text-gray-500">Try adjusting your search or filters</p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">No Companies Found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {isAddModalOpen && (
           <AddCompanyModal
