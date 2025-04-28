@@ -7,6 +7,7 @@ import axios from 'axios';
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false); // NEW STATE for toggle
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -17,17 +18,28 @@ const Login = () => {
     }
   
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/login`, {
+      const apiUrl = isAdmin
+        ? `${import.meta.env.VITE_API_URL}/admin/login`
+        : `${import.meta.env.VITE_API_URL}/student/login`;
+
+      const response = await axios.post(apiUrl, {
         email,
         password,
       });
-      // Assuming the API returns user data in response.data
-      const userData = response.data.data.student;
-      // console.log(response.data)
-      localStorage.setItem("accessToken", response.data.data.accessToken)
-      localStorage.setItem("refreshToken", response.data.data.refreshToken)
-      dispatch(login(userData)); // Store the actual user in redux
-      navigate("/dashboard"); // Navigate to dashboard after login
+
+      console.log(response.data);
+      
+
+      // Assuming both student and admin login return similar data structure
+      const userData = isAdmin ? response.data.data.user : response.data.data.student;
+
+      console.log(userData);
+      
+
+      localStorage.setItem("accessToken", response.data.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.data.refreshToken);
+      dispatch(login(userData)); 
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed. Please check your credentials and try again.");
@@ -57,6 +69,20 @@ const Login = () => {
           </div>
 
           <div className="space-y-6">
+            {/* Admin Toggle Added Here */}
+            <div className="flex items-center justify-end">
+              <label className="flex items-center space-x-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={isAdmin}
+                  onChange={(e) => setIsAdmin(e.target.checked)}
+                  className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
+                />
+                <span>Login as Admin</span>
+              </label>
+            </div>
+
+            {/* Email Field */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Email Address</label>
               <div className="relative">
@@ -75,6 +101,7 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700">Password</label>
@@ -96,6 +123,7 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Submit Button */}
             <button
               onClick={handleLogin}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 rounded-lg transition-colors font-medium"
