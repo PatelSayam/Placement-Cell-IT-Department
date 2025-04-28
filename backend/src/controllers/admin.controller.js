@@ -274,7 +274,7 @@ const delistCompany =asyncHandler(async (req, res) => {
 
     const { companyId } = req.params;
 
-    await Company.findByIdAndUpdate(companyId, { isListed: false });
+    await Company.findByIdAndDelete(companyId);
 
     return res
         .status(200)
