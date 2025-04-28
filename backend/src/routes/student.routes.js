@@ -65,7 +65,7 @@ router.route("/refresh-token").post(refreshAccessToken)
 router.route("/change-password").post(verifyJWT, changePassword)
 router.route("/get-current-student").post(verifyJWT, getCurrentStudent)
 router.route("/view-profile").post(viewProfile)
-router.route("/get-all-students").post(getAllStudents)
+router.route("/get-all-students").get(getAllStudents)
 
 router.route("/update-account-details").post( verifyJWT, 
     upload.fields(
