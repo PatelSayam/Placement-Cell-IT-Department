@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens =( async (userId) => {
         admin.refreshToken = refreshToken
         await admin.save({validateBeforeSave:false})
 
-        return {accessToken,refreshToken}
+        return { accessToken, refreshToken }
 
 
     } catch (error) {
@@ -30,41 +30,27 @@ const generateAccessAndRefreshTokens =( async (userId) => {
 })
 
 const registerAdmin = asyncHandler( async (req, res) => {
-    const {username, email, password } = req.body
-    console.log(req.body)
-    console.log(email);
-   
-    
+    const { email, password } = req.body
 
     if(
-        [username,email,password].some((field) => field?.trim() === "")
+        [email,password].some((field) => field?.trim() === "")
     ){
         throw new ApiError(400,"all fields are requried")
     }
     
-    const existedAdmin = await Admin.findOne({
-        $or: [{email},{username}]
-    })
+    const existedAdmin = await Admin.findOne({ email })
 
     if(existedAdmin){
         throw new ApiError(400,"user already exist")
     }
-    console.log("errrrrrrorrrr!!!!!!");
-    console.log(username);
-    console.log(email);
-    console.log(password);
-    console.log(req.files);
-    
-
    
     const admin = await Admin.create({
-        username,
         email,
         password,
     })
 
     if(!admin){
-        console.log("nothing ");
+        console.log("error while registering admin ");
         
     }
     
@@ -83,18 +69,14 @@ const registerAdmin = asyncHandler( async (req, res) => {
 })
 
 const loginAdmin = asyncHandler( async(req, res) => {
-    const {email, username, password} = req.body
-
-    //console.log(req.body);
+    const {email, password} = req.body
     
 
-    if(!(email || username)){
-        throw new ApiError(400,"email or username is requried")
+    if(!(email)){
+        throw new ApiError(400,"email is requried")
     }
 
-    const admin = await Admin.findOne({
-        $or: [{username},{email}]
-    })
+    const admin = await Admin.findOne({ email })
 
     if(!admin){
         throw new ApiError(404,"user does not exist")
@@ -113,10 +95,7 @@ const loginAdmin = asyncHandler( async(req, res) => {
     const options = {
         httpOnly: true,
         secure: true
-    }
-
-    //console.log(admin);
-    
+    }    
 
     return res
     .status(200)
