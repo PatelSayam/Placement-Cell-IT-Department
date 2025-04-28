@@ -7,6 +7,7 @@ import {
     logoutStudent, 
     refreshAccessToken, 
     registerStudent, 
+    registerStudentSM, 
     registerWithOtp, 
     sendOtp, 
     updateAccountDetails, 
@@ -46,7 +47,17 @@ router.route("/register").post(
 )
 
 router.route("/login").post(loginStudent)
-
+router.post(
+    '/register-student-sm',
+    upload.fields([
+      { name: 'profilePhoto', maxCount: 1 },
+      { name: 'sscMarksheet', maxCount: 1 },
+      { name: 'hscMarksheet', maxCount: 1 },
+      { name: 'diplomaDegree', maxCount: 1 },
+      { name: 'resume', maxCount: 1 },
+    ]),
+    registerStudentSM
+  );
 // //secured routes 
 
 router.route("/logout").post(verifyJWT, logoutStudent)

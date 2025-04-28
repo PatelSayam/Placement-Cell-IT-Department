@@ -7,6 +7,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { OTP } from "../models/otp.model.js"
 import { AllowedEmail } from "../models/allowedEmails.model.js"
 import { sendEmail } from "../utils/Nodemailer.js"
+import bcrypt from "bcryptjs"
 
 
 export const generateAccessAndRefreshTokens = async (studentId) => {
@@ -457,6 +458,109 @@ const registerWithOtp = asyncHandler(async (req, res) => {
         );
 });
 
+const registerStudentSM = async (req, res) => {
+    try {
+      const {
+        collegeEmail,
+        personalEmail,
+        password,
+        rollNo,
+        fullName,
+        gender,
+        dob,
+        contactNumber,
+        parentContactNumber,
+        parentEmail,
+        permanentAddress,
+        ssc,
+        hsc,
+        diploma,
+        skills,
+        preferredRoles,
+        projects,
+        certifications,
+        socialLinks,
+      } = req.body;
+  
+      const parsedPermanentAddress = permanentAddress ? JSON.parse(permanentAddress) : undefined;
+      const parsedSSC = ssc ? JSON.parse(ssc) : undefined;
+      const parsedHSC = hsc ? JSON.parse(hsc) : undefined;
+      const parsedDiploma = diploma ? JSON.parse(diploma) : undefined;
+      const parsedSkills = skills ? JSON.parse(skills) : undefined;
+      const parsedPreferredRoles = preferredRoles ? JSON.parse(preferredRoles) : undefined;
+      const parsedProjects = projects ? JSON.parse(projects) : undefined;
+      const parsedCertifications = certifications ? JSON.parse(certifications) : undefined;
+      const parsedSocialLinks = socialLinks ? JSON.parse(socialLinks) : undefined;
+  
+      if (!collegeEmail || !password || !fullName || !rollNo) {
+        return res.status(400).json({ message: "Required fields are missing" });
+      }
+  
+      const existingStudent = await Student.findOne({ collegeEmail });
+      if (existingStudent) {
+        return res.status(400).json({ message: "Student with this email already registered" });
+      }
+  
+      const otpRecord = await OTP.findOne({ email: collegeEmail, isVerified: true });
+      if (!otpRecord) {
+        return res.status(400).json({ message: "Please verify your email via OTP first" });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const profilePhotoUrl = req.files['profilePhoto'] ? (await uploadOnCloudinary(req.files['profilePhoto'][0].path)).secure_url : '';
+      const sscMarksheetUrl = req.files['sscMarksheet'] ? (await uploadOnCloudinary(req.files['sscMarksheet'][0].path)).secure_url : '';
+      const hscMarksheetUrl = req.files['hscMarksheet'] ? (await uploadOnCloudinary(req.files['hscMarksheet'][0].path)).secure_url : '';
+      const diplomaDegreeUrl = req.files['diplomaDegree'] ? (await uploadOnCloudinary(req.files['diplomaDegree'][0].path)).secure_url : '';
+      const resumeUrl = req.files['resume'] ? (await uploadOnCloudinary(req.files['resume'][0].path)).secure_url : '';
+  
+      const student = await Student.create({
+        collegeEmail,
+        personalEmail,
+        password: hashedPassword,
+        rollNo,
+        fullName,
+        gender,
+        dob,
+        contactNumber,
+        parentContactNumber,
+        parentEmail,
+        permanentAddress: parsedPermanentAddress,
+        ssc: {
+          ...parsedSSC,
+          marksheetUrl: sscMarksheetUrl,
+        },
+        hsc: {
+          ...parsedHSC,
+          marksheetUrl: hscMarksheetUrl,
+        },
+        diploma: {
+          ...parsedDiploma,
+          degreePdfUrl: diplomaDegreeUrl,
+        },
+        skills: parsedSkills,
+        preferredRoles: parsedPreferredRoles,
+        projects: parsedProjects,
+        certifications: parsedCertifications,
+        socialLinks: parsedSocialLinks,
+        profilePhotoUrl,
+        resumeUrl,
+        detailsVerified: true,
+      });
+  
+      await OTP.deleteOne({ email: collegeEmail });
+  
+      return res.status(201).json({
+        message: "Student registered successfully",
+        student
+      });
+  
+    } catch (error) {
+      console.error("Error registering student:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  };
+
 
 
 
@@ -474,4 +578,5 @@ export {
     sendOtp,
     verifyOtp,
     registerWithOtp,
+    registerStudentSM,
 }
