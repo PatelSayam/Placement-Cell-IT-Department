@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { login } from "../store/authSlice";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -9,6 +11,7 @@ const Signup = () => {
   const [serverOtpVerified, setServerOtpVerified] = useState(false);
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const baseUrl = import.meta.env.VITE_API_URL;
   const sendOtp = async () => {
     if (!email.includes("@")) {
@@ -42,8 +45,12 @@ const Signup = () => {
       return;
     }
     try {
-      await axios.post(`${baseUrl}/student/register-with-otp`, { email, password });
+      
+      const response = await axios.post(`${baseUrl}/student/register-with-otp`, { email, password });
+      const userData = response.data.data;
+      console.log(response.data.data)
       alert("✅ Registered successfully!");
+      dispatch(login(userData));
       navigate("/general-info");
     } catch (error) {
       console.error(error);

@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useSelector } from "react-redux"
+import axios from 'axios';
 
 const GeneralInfo = () => {
   const [form, setForm] = useState({
@@ -64,15 +66,61 @@ const GeneralInfo = () => {
     setFiles((prev) => ({ ...prev, [name]: files[0] }))
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const user = useSelector((state) => state.auth.userData);
+  console.log("USER",user._id)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
     if (!form.confirmed) {
-      alert("✅ Please confirm the data authenticity checkbox!")
-      return
+      alert("✅ Please confirm the data authenticity checkbox!");
+      return;
     }
-    // 👉 Send form and files to backend here via API
-    alert("🎉 Info submitted successfully!")
-  }
+  
+    try {
+      const formData = new FormData();
+  
+      // Append all form fields
+      formData.append('collegeEmail', form.collegeEmail);
+      formData.append('personalEmail', form.personalEmail);
+      formData.append('rollNo', form.rollNo);
+      formData.append('fullName', form.fullName);
+      formData.append('gender', form.gender);
+      formData.append('contactNumber', form.contactNumber);
+      formData.append('parentContactNumber', form.parentContactNumber);
+      formData.append('sscResult', form.sscResult);
+      formData.append('sscPassingYear', form.sscPassingYear);
+      formData.append('hscResult', form.hscResult);
+      formData.append('hscPassingYear', form.hscPassingYear);
+      formData.append('addressLine', form.addressLine);
+      formData.append('city', form.city);
+      formData.append('pincode', form.pincode);
+      formData.append('activeBacklogs', form.activeBacklogs);
+      formData.append('totalBacklogs', form.totalBacklogs);
+      formData.append('skills', form.skills); // comma-separated string
+      formData.append('preferredRoles', form.preferredRoles); // comma-separated string
+      formData.append('github', form.github);
+      formData.append('linkedin', form.linkedin);
+  
+      // For projects (Array of objects), stringify before appending
+      formData.append('projects', JSON.stringify(form.projects));
+      formData.append('userId', user._id)
+  
+      // Make the API request
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/update-account-details`, formData);
+
+      if (response.status === 200) {
+        alert("🎉 Info submitted successfully!");
+      } else {
+        console.error(response.data);
+        alert(`❌ Failed to submit: ${response.data.message || 'Something went wrong.'}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert(`❌ Failed to submit: ${error.response?.data?.message || 'Something went wrong.'}`);
+    }
+  };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-4">
