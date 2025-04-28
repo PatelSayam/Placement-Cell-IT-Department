@@ -5,21 +5,28 @@ import {
     getCompany, 
     changeApplicationState 
 } from "../controllers/application.controller.js";
-import { verifyStudent } from "../middlewares/auth.middleware.js"; // Assuming student auth
-import { verifyAdmin } from "../middlewares/auth.middleware.js"; // Admin for status change
+import { verifyJWT } from "../middlewares/auth.middleware.js"; 
+import { verifyJWTAdmin } from "../middlewares/admin.auth.middleware.js"; 
 
 const router = Router()
 
 // Apply to a company (student route)
-router.post("/apply/:companyId", verifyStudent, applyToJob);
+router.post("/apply/:companyId", verifyJWT, upload.fields(
+    [
+        { 
+            name: 'resume', 
+            maxCount: 1 
+        }
+    ]
+) , applyToJob);
 
 // Get all applicants for a company (admin route)
-router.get("/applicants/:companyId", verifyAdmin, getApplicant);
+router.get("/applicants/:companyId", verifyJWTAdmin, getApplicant);
 
 // Get all companies a student applied to (student route)
-router.get("/companies/applied", verifyStudent, getCompany);
+router.get("/companies/applied", verifyJWT, getCompany);
 
 // Admin changes application status
-router.patch("/application/:companyId/:studentId", verifyAdmin, changeApplicationState);
+router.patch("/application/:companyId/:studentId", verifyJWTAdmin, changeApplicationState);
 
 export default router;

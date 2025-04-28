@@ -14,6 +14,9 @@ const applicationSchema = new mongoose.Schema({
     enum: ['PENDING', 'PLACED', 'REJECTED'],
     default: 'PENDING'
   },
+  resume: {
+    type: String,
+  },
   updatedAt: {
     type: Date,
     default: Date.now
