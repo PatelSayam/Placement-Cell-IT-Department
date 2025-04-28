@@ -252,50 +252,137 @@ const getCurrentStudent = asyncHandler(async(req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    const {  } = req.body
-  
-    
-    // if (!fullname || !email) {
-    //   throw new ApiError(400, "fullname and email are required")
-    // }
-  
-    // Create an update object with only the fields that are provided
-    const updateData = {
-      fullname,
-      email,
+    const { body, files } = req;
+
+
+    const updateData = {};
+
+
+    const fields = [
+        "collegeEmail", "personalEmail", "rollNo", "collegeId",
+        "fullName", "gender", "dob", "contactNumber", "parentContactNumber",
+        "parentEmail", "category", "admissionQuota"
+    ];
+
+    fields.forEach(field => {
+        if (body[field]) updateData[field] = body[field];
+    });
+
+
+
+    if (body.sscResult || body.sscPassingYear || body.sscBoard || body.sscMarksheetUrl) {
+        updateData.ssc = {
+            result: body.sscResult,
+            passingYear: body.sscPassingYear,
+            board: body.sscBoard,
+            marksheetUrl: body.sscMarksheetUrl
+        };
     }
-  
-    // Add any additional fields that might be in the request
-    // This allows for extending the update functionality
 
-    if (req.body.location) updateData.location = req.body.location // example :: in this manner data will be added
-                                                                    //to new student obj
-
-    const avatarLocalPath1 = req.files?.resume[0]?.path;
-
-    const resume = await uploadOnCloudinary(avatarLocalPath1)
-    
-    if (!resume) {
-        throw new ApiError(400, "resume file is required")
+    if (body.hscResult || body.hscPassingYear || body.hscBoard || body.hscMarksheetUrl) {
+        updateData.hsc = {
+            result: body.hscResult,
+            passingYear: body.hscPassingYear,
+            board: body.hscBoard,
+            marksheetUrl: body.hscMarksheetUrl
+        };
     }
 
-    updateData.resume = resume.url // update document :: all other in same fashion 
-  
-    try {
-      const student = await Student.findByIdAndUpdate(req.student?._id, { $set: updateData }, { new: true }).select("-password")
-  
-      if (!student) {
-        throw new ApiError(404, "Student not found")
-      }
-  
-      return res.status(200).json(new ApiResponse(200, user, "Account details updated successfully"))
-
-    } catch (error) {
-
-      throw new ApiError(500, error.message || "Failed to update account details")
-
+    if (body.diplomaResult || body.diplomaBoardOrUniversity || body.diplomaPassingYear || body.diplomaDegreePdfUrl) {
+        updateData.diploma = {
+            result: body.diplomaResult,
+            boardOrUniversity: body.diplomaBoardOrUniversity,
+            passingYear: body.diplomaPassingYear,
+            degreePdfUrl: body.diplomaDegreePdfUrl
+        };
     }
-  })
+
+    if (body.addressLine || body.city || body.pincode) {
+        updateData.permanentAddress = {
+            addressLine: body.addressLine,
+            city: body.city,
+            pincode: body.pincode
+        };
+    }
+
+    if (body.activeBacklogs || body.totalBacklogs) {
+        updateData.backlogs = {
+            active: body.activeBacklogs,
+            total: body.totalBacklogs
+        };
+    }
+
+    if (body.breakYearsCount || body.breakYearsReason) {
+        updateData.breakYears = {
+            count: body.breakYearsCount,
+            reason: body.breakYearsReason
+        };
+    }
+
+    if (body.github || body.hackerrank || body.leetcode || body.codechef || body.linkedin) {
+        updateData.socialLinks = {
+            github: body.github,
+            hackerrank: body.hackerrank,
+            leetcode: body.leetcode,
+            codechef: body.codechef,
+            linkedin: body.linkedin
+        };
+    }
+
+
+    if (body.skills) {
+        updateData.skills = Array.isArray(body.skills) ? body.skills : body.skills.split(",");
+    }
+
+    if (body.preferredRoles) {
+        updateData.preferredRoles = Array.isArray(body.preferredRoles) ? body.preferredRoles : body.preferredRoles.split(",");
+    }
+
+    if (body.certifications) {
+        updateData.certifications = Array.isArray(body.certifications) ? body.certifications : body.certifications.split(",");
+    }
+
+    if (body.projects) {
+        try {
+            updateData.projects = JSON.parse(body.projects); 
+        } catch (error) {
+            throw new ApiError(400, "Invalid projects format. Should be a valid JSON array.");
+        }
+    }
+
+
+    if (files?.resume?.[0]?.path) {
+        const resumeUpload = await uploadOnCloudinary(files.resume[0].path);
+        if (!resumeUpload) {
+            throw new ApiError(400, "Resume upload failed");
+        }
+        updateData.resumeUrl = resumeUpload.url;
+    }
+
+
+    if (files?.profilePhoto?.[0]?.path) {
+        const profilePhotoUpload = await uploadOnCloudinary(files.profilePhoto[0].path);
+        if (!profilePhotoUpload) {
+            throw new ApiError(400, "Profile photo upload failed");
+        }
+        updateData.profilePhotoUrl = profilePhotoUpload.url;
+    }
+
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+        req.student._id,
+        { $set: updateData },
+        { new: true }
+    ).select("-password");
+
+    if (!updatedStudent) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedStudent, "Student details updated successfully.")
+    );
+});
   
 
 const viewProfile = asyncHandler(async(req, res) => {
