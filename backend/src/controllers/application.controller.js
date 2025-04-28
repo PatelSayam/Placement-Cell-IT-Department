@@ -18,6 +18,14 @@ const applyToJob = asyncHandler(async (req, res) => {
         throw new ApiError(400, "companyId is required")
     }
 
+    const resumeLocalPath = req.files?.resume[0]?.path;
+
+    const resume = await uploadOnCloudinary(resumeLocalPath)
+
+    if (!resume) {
+        throw new ApiError(400, "resume file is required")
+    }
+
     const company = await Company.findById(companyId)
 
     if(!company){
