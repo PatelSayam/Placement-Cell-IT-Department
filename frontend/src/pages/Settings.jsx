@@ -1,6 +1,9 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
+import * as XLSX from "xlsx"
+import axios from "axios";
 
 const Settings = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [generalSettings, setGeneralSettings] = useState({
     instituteName: "Dharamsinh Desai University (IT)",
     instituteWebsite: "ddu.ac.in",
@@ -33,6 +36,16 @@ const Settings = () => {
     studentProfileApproval: true,
   })
 
+  const [excelData, setExcelData] = useState(null)
+  const [columns, setColumns] = useState([])
+  const [selectedColumn, setSelectedColumn] = useState("")
+  const [extractedEmails, setExtractedEmails] = useState([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef(null)
+
+  const [emailSubject, setEmailSubject] = useState("")
+  const [emailMessage, setEmailMessage] = useState("")
+
   const handleGeneralSettingsChange = (e) => {
     const { name, value } = e.target
     setGeneralSettings((prev) => ({ ...prev, [name]: value }))
@@ -57,6 +70,106 @@ const Settings = () => {
   const handleAccessSettingsChange = (e) => {
     const { name, checked } = e.target
     setAccessSettings((prev) => ({ ...prev, [name]: checked }))
+  }
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setIsUploading(true)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result)
+        const workbook = XLSX.read(data, { type: "array" })
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+        if (jsonData.length > 0) {
+          setExcelData(jsonData)
+          setColumns(Object.keys(jsonData[0]))
+        } else {
+          alert("The Excel file appears to be empty.")
+        }
+      } catch (error) {
+        console.error("Error parsing Excel file:", error)
+        alert("Failed to parse the Excel file. Please make sure it's a valid Excel file.")
+      } finally {
+        setIsUploading(false)
+      }
+    }
+
+    reader.onerror = () => {
+      alert("Failed to read the file.")
+      setIsUploading(false)
+    }
+
+    reader.readAsArrayBuffer(file)
+  }
+
+  const handleColumnSelect = (e) => {
+    setSelectedColumn(e.target.value)
+  }
+
+  const extractEmails = () => {
+    if (!excelData || !selectedColumn) {
+      alert("Please upload an Excel file and select a column first.")
+      return
+    }
+
+    const emails = excelData
+      .map((row) => row[selectedColumn])
+      .filter((value) => value && typeof value === "string" && value.includes("@"))
+
+    setExtractedEmails(emails)
+  }
+
+  const sendEmailsToBackend = async () => {
+    if (extractedEmails.length === 0) {
+      alert("No emails to send. Please extract emails first.")
+      return
+    }
+
+    if (!emailSubject.trim()) {
+      alert("Please enter an email subject.")
+      return
+    }
+
+    if (!emailMessage.trim()) {
+      alert("Please enter an email message.")
+      return
+    }
+
+    try {
+      // This is a dummy function that would call the backend
+      console.log("Sending emails to backend:", {
+        emails: extractedEmails,
+        subject: emailSubject,
+        message: emailMessage,
+      })
+
+      alert(`${extractedEmails.length} emails would be sent to the backend.`)
+
+      await axios.post(
+        `${apiUrl}/admin/notify`,
+        {
+          emails: extractedEmails,
+          subject: emailSubject,
+          message: emailMessage
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error sending emails:", error)
+      alert("Failed to send emails. Please try again.")
+    }
   }
 
   const saveSettings = (settingType) => {
@@ -411,6 +524,118 @@ const Settings = () => {
                 >
                   Save Access Settings
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Excel Email Import */}
+          <div className="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Email Import from Excel</h2>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Upload Excel File</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current.click()}
+                      className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors"
+                    >
+                      {isUploading ? "Uploading..." : "Choose Excel File"}
+                    </button>
+                    {excelData && (
+                      <span className="text-sm text-green-600">
+                        File uploaded successfully! ({excelData.length} rows)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {excelData && columns.length > 0 && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Select Email Column</label>
+                      <div className="flex gap-3">
+                        <select
+                          value={selectedColumn}
+                          onChange={handleColumnSelect}
+                          className="w-full md:w-1/2 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                          <option value="">-- Select Column --</option>
+                          {columns.map((column) => (
+                            <option key={column} value={column}>
+                              {column}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={extractEmails}
+                          disabled={!selectedColumn}
+                          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Extract Emails
+                        </button>
+                      </div>
+                    </div>
+
+                    {extractedEmails.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Extracted Emails ({extractedEmails.length})
+                          </label>
+                          <button
+                            onClick={sendEmailsToBackend}
+                            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors"
+                          >
+                            Process Emails
+                          </button>
+                        </div>
+
+                        <div className="border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+                          <ul className="space-y-1">
+                            {extractedEmails.map((email, index) => (
+                              <li key={index} className="text-sm text-gray-700">
+                                {email}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="space-y-4 mt-4">
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Email Subject</label>
+                            <input
+                              type="text"
+                              value={emailSubject}
+                              onChange={(e) => setEmailSubject(e.target.value)}
+                              placeholder="Enter email subject"
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Email Body</label>
+                            <textarea
+                              value={emailMessage}
+                              onChange={(e) => setEmailMessage(e.target.value)}
+                              placeholder="Enter email message"
+                              rows={6}
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

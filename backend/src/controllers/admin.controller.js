@@ -245,7 +245,7 @@ const getEligibleStudents = asyncHandler(async (req, res) => {
 const notifyStudents = asyncHandler(async (req, res) => {
 
   const { emails, subject, message } = req.body;
-
+  console.log(req.body)
   //emails is a array of all the emails.
   //extract all the emails from frontend 
   //so that server dont have any load for file handling.

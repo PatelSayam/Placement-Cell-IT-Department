@@ -3,25 +3,6 @@ import { useNavigate } from "react-router-dom";
 import CompanyCard from "../components/CompanyCard";
 import axios from "axios";
 
-// const companies = [
-//   {
-//     id: 1,
-//     name: "Google",
-//     role: "SDE Intern",
-//     location: "Bangalore",
-//     ctc: "12 LPA",
-//     logo: "https://logo.clearbit.com/google.com",
-//   },
-//   {
-//     id: 2,
-//     name: "Microsoft",
-//     role: "Product Intern",
-//     location: "Hyderabad",
-//     ctc: "11 LPA",
-//     logo: "https://logo.clearbit.com/microsoft.com",
-//   },
-// ];
-
 const StudentHome = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
