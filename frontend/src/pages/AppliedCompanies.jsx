@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import axios from "axios"
 
 const AppliedCompanies = () => {
   const [appliedCompanies, setAppliedCompanies] = useState([])
@@ -7,13 +8,26 @@ const AppliedCompanies = () => {
     // Fetch mock data from backend endpoint
     const fetchAppliedCompanies = async () => {
       try {
-        const res = await fetch("/api/student/applied-companies")
-        const data = await res.json()
-        setAppliedCompanies(data)
+        const token = localStorage.getItem("accessToken"); // or however you're storing your token
+    
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/application/companies/applied`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+    
+        const responseData = res.data;  // axios automatically parses JSON
+        console.log("RESPONSE DATA",responseData)
+        if (responseData.success) {
+          setAppliedCompanies(responseData.data);
+        } else {
+          console.error("Error fetching companies:", responseData.message);
+        }
+    
       } catch (err) {
-        console.error("Failed to fetch applied companies:", err)
+        console.error("Failed to fetch applied companies:", err);
       }
-    }
+    };
     fetchAppliedCompanies()
   }, [])
 
