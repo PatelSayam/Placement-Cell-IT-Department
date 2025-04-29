@@ -1,182 +1,145 @@
-import { useState } from "react"
+"use client"
+
+import { useState, useEffect } from "react"
+import axios from "axios"
+import * as XLSX from "xlsx"
 import ApplicationsTable from "../components/ApplicationsTable"
 import ApplicationFilters from "../components/ApplicationFilters"
 import ApplicationDetailsModal from "../components/ApplicationDetailsModal"
 
-// Mock data for applications
-const mockApplications = [
-  {
-    id: 1,
-    studentName: "Aditya Sharma",
-    studentId: "CS2021001",
-    companyName: "Google",
-    role: "Software Engineer",
-    appliedDate: "2023-12-10",
-    status: "Selected",
-    package: "24 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-12-20",
-    interviewFeedback: "Excellent problem-solving skills. Strong in algorithms and system design.",
-    studentDetails: {
-      email: "aditya.s@example.com",
-      phone: "9876543210",
-      cgpa: 9.2,
-      branch: "Computer Science",
-      skills: ["React", "Node.js", "Python", "Machine Learning"],
-    },
-  },
-  {
-    id: 2,
-    studentName: "Priya Patel",
-    studentId: "EC2021015",
-    companyName: "Microsoft",
-    role: "Software Engineer",
-    appliedDate: "2023-12-08",
-    status: "Selected",
-    package: "21 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-12-18",
-    interviewFeedback: "Good technical knowledge. Performed well in coding rounds.",
-    studentDetails: {
-      email: "priya.p@example.com",
-      phone: "9876543211",
-      cgpa: 8.7,
-      branch: "Electronics",
-      skills: ["VLSI", "Embedded Systems", "C++", "IoT"],
-    },
-  },
-  {
-    id: 3,
-    studentName: "Rahul Verma",
-    studentId: "ME2021032",
-    companyName: "Amazon",
-    role: "Product Manager",
-    appliedDate: "2023-12-05",
-    status: "Rejected",
-    package: null,
-    resumeLink: "#",
-    interviewDate: "2023-12-15",
-    interviewFeedback: "Lacks product understanding. Communication skills need improvement.",
-    studentDetails: {
-      email: "rahul.v@example.com",
-      phone: "9876543212",
-      cgpa: 8.1,
-      branch: "Mechanical",
-      skills: ["AutoCAD", "SolidWorks", "Project Management"],
-    },
-  },
-  {
-    id: 4,
-    studentName: "Sneha Gupta",
-    studentId: "CS2021042",
-    companyName: "Amazon",
-    role: "Software Development Engineer",
-    appliedDate: "2023-12-07",
-    status: "Selected",
-    package: "26 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-12-17",
-    interviewFeedback: "Excellent coding skills. Good understanding of system design principles.",
-    studentDetails: {
-      email: "sneha.g@example.com",
-      phone: "9876543213",
-      cgpa: 9.5,
-      branch: "Computer Science",
-      skills: ["Java", "Spring Boot", "AWS", "Microservices"],
-    },
-  },
-  {
-    id: 5,
-    studentName: "Vikram Singh",
-    studentId: "IT2021056",
-    companyName: "Infosys",
-    role: "Systems Engineer",
-    appliedDate: "2023-12-01",
-    status: "Selected",
-    package: "10 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-12-10",
-    interviewFeedback: "Good technical knowledge. Communication skills are excellent.",
-    studentDetails: {
-      email: "vikram.s@example.com",
-      phone: "9876543214",
-      cgpa: 8.4,
-      branch: "Information Technology",
-      skills: ["JavaScript", "React", "SQL", "MongoDB"],
-    },
-  },
-  {
-    id: 6,
-    studentName: "Neha Kapoor",
-    studentId: "CS2021078",
-    companyName: "TCS",
-    role: "Assistant System Engineer",
-    appliedDate: "2023-11-25",
-    status: "Pending",
-    package: null,
-    resumeLink: "#",
-    interviewDate: "2024-01-05",
-    interviewFeedback: null,
-    studentDetails: {
-      email: "neha.k@example.com",
-      phone: "9876543215",
-      cgpa: 7.9,
-      branch: "Computer Science",
-      skills: ["Python", "Data Analysis", "Machine Learning"],
-    },
-  },
-  {
-    id: 7,
-    studentName: "Arjun Reddy",
-    studentId: "EE2021089",
-    companyName: "Tata Power",
-    role: "Graduate Engineer Trainee",
-    appliedDate: "2023-11-20",
-    status: "Selected",
-    package: "12 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-12-05",
-    interviewFeedback: "Good domain knowledge. Performed well in technical interview.",
-    studentDetails: {
-      email: "arjun.r@example.com",
-      phone: "9876543216",
-      cgpa: 8.8,
-      branch: "Electrical",
-      skills: ["Power Systems", "Electrical Design", "PLC Programming"],
-    },
-  },
-  {
-    id: 8,
-    studentName: "Kavita Desai",
-    studentId: "CH2021102",
-    companyName: "Reliance Industries",
-    role: "Process Engineer",
-    appliedDate: "2023-11-15",
-    status: "Selected",
-    package: "14 LPA",
-    resumeLink: "#",
-    interviewDate: "2023-11-30",
-    interviewFeedback: "Excellent domain knowledge. Good understanding of chemical processes.",
-    studentDetails: {
-      email: "kavita.d@example.com",
-      phone: "9876543217",
-      cgpa: 9.0,
-      branch: "Chemical",
-      skills: ["Process Engineering", "MATLAB", "Chemical Simulation"],
-    },
-  },
-]
-
 const ApplicationsManagement = () => {
-  const [applications, setApplications] = useState(mockApplications)
-  const [filteredApplications, setFilteredApplications] = useState(mockApplications)
+  const [applications, setApplications] = useState([])
+  const [filteredApplications, setFilteredApplications] = useState([])
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [exportLoading, setExportLoading] = useState(false)
   const [filters, setFilters] = useState({
     company: "All",
     status: "All",
     dateRange: "All",
   })
+
+  // Fetch applications on component mount
+  useEffect(() => {
+    fetchApplications()
+  }, [])
+
+  // Watch for company filter changes to trigger Excel export
+  useEffect(() => {
+    if (filters.company !== "All") {
+      exportToExcel(filteredApplications)
+    }
+  }, [filters.company])
+
+  // Fetch applications from API
+  const fetchApplications = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem("accessToken")
+
+      // Make API request with authorization header
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/application/applicants`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log(response.data)
+
+      const data = response.data.data || []
+      setApplications(data)
+      setFilteredApplications(data)
+    } catch (err) {
+      console.error("Error fetching applications:", err)
+      setError("Failed to load applications. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Function to fetch student details
+  const fetchStudentDetails = async (studentId) => {
+    try {
+      const token = localStorage.getItem("accessToken")
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/view-profile`, {
+        _id:studentId
+      },{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response.data.data
+    } catch (error) {
+      console.error(`Error fetching details for student ${studentId}:`, error)
+      return null
+    }
+  }
+
+  // Function to export applications to Excel
+  const exportToExcel = async (applicationsToExport) => {
+    if (applicationsToExport.length === 0) return
+
+    setExportLoading(true)
+    try {
+      // Create an array to hold the enriched application data
+      const enrichedData = []
+
+      // Fetch student details for each application
+      for (const app of applicationsToExport) {
+        const studentId = app.studentId?._id || app.studentId
+
+        // Fetch student details
+        const studentDetails = await fetchStudentDetails(studentId)
+
+        // Create an enriched application object with all the data we want to include
+        const enrichedApp = {
+          "Student Name": app.studentId?.fullName || studentDetails?.fullName || "N/A",
+          "Student ID": studentId || "N/A",
+          "College Email": studentDetails?.collegeEmail || "N/A",
+          "Personal Email": studentDetails?.personalEmail || "N/A",
+          Company: app.companyId?.name || "N/A",
+          Role: app.companyDetails?.jobRole || app.role || "N/A",
+          "Applied Date": app.appliedDate
+            ? new Date(app.appliedDate).toLocaleDateString()
+            : new Date(app.createdAt || Date.now()).toLocaleDateString(),
+          Status: app.status || "N/A",
+          "Resume URL": studentDetails?.resume || "N/A",
+          CGPA: studentDetails?.cgpa || "N/A",
+          Branch: studentDetails?.branch || "N/A",
+          Skills: studentDetails?.skills?.join(", ") || "N/A",
+          Phone: studentDetails?.phone || "N/A",
+          Address: studentDetails?.address || "N/A",
+          LinkedIn: studentDetails?.linkedin || "N/A",
+          GitHub: studentDetails?.github || "N/A",
+          Portfolio: studentDetails?.portfolio || "N/A",
+        }
+
+        enrichedData.push(enrichedApp)
+      }
+
+      // Create a worksheet from the enriched data
+      const worksheet = XLSX.utils.json_to_sheet(enrichedData)
+
+      // Create a workbook and add the worksheet
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Applications")
+
+      // Generate Excel file name based on company filter
+      const companyName = filters.company === "All" ? "All_Companies" : filters.company
+      const fileName = `${companyName}_Applications_${new Date().toISOString().split("T")[0]}.xlsx`
+
+      // Write the workbook and trigger download
+      XLSX.writeFile(workbook, fileName)
+    } catch (error) {
+      console.error("Error exporting to Excel:", error)
+      alert("Failed to export applications to Excel. Please try again.")
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
   // Function to handle filter changes
   const handleFilterChange = (newFilters) => {
@@ -190,7 +153,12 @@ const ApplicationsManagement = () => {
 
     // Apply company filter
     if (filterOptions.company !== "All") {
-      result = result.filter((app) => app.companyName === filterOptions.company)
+      result = result.filter(
+        (app) =>
+          app.companyDetails?.name === filterOptions.company ||
+          app.companyName === filterOptions.company ||
+          app.companyId?.name === filterOptions.company,
+      )
     }
 
     // Apply status filter
@@ -205,13 +173,22 @@ const ApplicationsManagement = () => {
 
       if (filterOptions.dateRange === "Last 7 Days") {
         const lastWeek = new Date(today.getTime() - 7 * oneDay)
-        result = result.filter((app) => new Date(app.appliedDate) >= lastWeek)
+        result = result.filter((app) => {
+          const appDate = new Date(app.appliedDate || app.createdAt)
+          return appDate >= lastWeek
+        })
       } else if (filterOptions.dateRange === "Last 30 Days") {
         const lastMonth = new Date(today.getTime() - 30 * oneDay)
-        result = result.filter((app) => new Date(app.appliedDate) >= lastMonth)
+        result = result.filter((app) => {
+          const appDate = new Date(app.appliedDate || app.createdAt)
+          return appDate >= lastMonth
+        })
       } else if (filterOptions.dateRange === "Last 90 Days") {
         const lastQuarter = new Date(today.getTime() - 90 * oneDay)
-        result = result.filter((app) => new Date(app.appliedDate) >= lastQuarter)
+        result = result.filter((app) => {
+          const appDate = new Date(app.appliedDate || app.createdAt)
+          return appDate >= lastQuarter
+        })
       }
     }
 
@@ -225,51 +202,154 @@ const ApplicationsManagement = () => {
   }
 
   // Function to update application status
-  const updateApplicationStatus = (id, newStatus) => {
-    // In a real app, this would be an API call
-    // PATCH /api/applications/{id}
-    const updatedApplications = applications.map((app) => {
-      if (app.id === id) {
-        return { ...app, status: newStatus }
-      }
-      return app
-    })
+  const updateApplicationStatus = async (applicationId, studentId, newStatus) => {
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem("accessToken")
 
-    setApplications(updatedApplications)
-    setFilteredApplications(
-      filteredApplications.map((app) => {
-        if (app.id === id) {
+      const companyId = applicationId
+
+      // Make API request to update status
+      const response = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/application/application/${companyId}/${studentId}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      console.log(response.data)
+
+      // Update local state
+      const updatedApplications = applications.map((app) => {
+        if (app._id === applicationId) {
           return { ...app, status: newStatus }
         }
         return app
-      }),
-    )
+      })
 
-    if (selectedApplication && selectedApplication.id === id) {
-      setSelectedApplication({ ...selectedApplication, status: newStatus })
+      setApplications(updatedApplications)
+      setFilteredApplications(
+        filteredApplications.map((app) => {
+          if (app._id === applicationId) {
+            return { ...app, status: newStatus }
+          }
+          return app
+        }),
+      )
+
+      // Update selected application if it's the one being modified
+      if (selectedApplication && selectedApplication._id === applicationId) {
+        setSelectedApplication({ ...selectedApplication, status: newStatus })
+      }
+    } catch (err) {
+      console.error("Error updating application status:", err)
+      alert("Failed to update application status. Please try again.")
     }
+  }
+
+  // Get unique company names for filter dropdown
+  const getUniqueCompanies = () => {
+    const companyNames = applications
+      .map((app) => app.companyId?.name || app.companyDetails?.name || app.companyName)
+      .filter(Boolean)
+
+    return [...new Set(companyNames)]
+  }
+
+  // Manual export button handler
+  const handleManualExport = () => {
+    exportToExcel(filteredApplications)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-6 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Applications Management</h1>
-          <p className="text-gray-500">Track and manage student applications to companies</p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Applications Management</h1>
+            <p className="text-gray-500">Track and manage student applications to companies</p>
+          </div>
+          <button
+            onClick={handleManualExport}
+            disabled={exportLoading || filteredApplications.length === 0}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 flex items-center"
+          >
+            {exportLoading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  ></path>
+                </svg>
+                Export to Excel
+              </>
+            )}
+          </button>
         </div>
 
-        <ApplicationFilters
-          onFilterChange={handleFilterChange}
-          filters={filters}
-          companies={[...new Set(applications.map((app) => app.companyName))]}
-        />
+        <ApplicationFilters onFilterChange={handleFilterChange} filters={filters} companies={getUniqueCompanies()} />
+
+        {exportLoading && filters.company !== "All" && (
+          <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-md flex items-center">
+            <svg
+              className="animate-spin mr-2 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Preparing Excel export for {filters.company}... This may take a moment.
+          </div>
+        )}
 
         <div className="mt-6 bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
-          <ApplicationsTable
-            applications={filteredApplications}
-            onViewDetails={viewApplicationDetails}
-            onUpdateStatus={updateApplicationStatus}
-          />
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500">{error}</div>
+          ) : (
+            <ApplicationsTable
+              applications={filteredApplications}
+              onViewDetails={viewApplicationDetails}
+              onUpdateStatus={updateApplicationStatus}
+            />
+          )}
         </div>
 
         {isModalOpen && (

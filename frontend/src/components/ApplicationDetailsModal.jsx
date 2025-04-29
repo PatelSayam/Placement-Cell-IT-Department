@@ -1,5 +1,13 @@
+"use client"
+
 const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus }) => {
-  if (!isOpen) return null
+  if (!isOpen || !application) return null
+
+  // Format date if available
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A"
+    return new Date(dateString).toLocaleDateString()
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -39,11 +47,17 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
-                        <span className="text-xl text-indigo-600 font-medium">{application.studentName.charAt(0)}</span>
+                        <span className="text-xl text-indigo-600 font-medium">
+                          {application.studentDetails?.fullName?.charAt(0) || "?"}
+                        </span>
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold text-gray-800">{application.studentName}</h4>
-                        <p className="text-gray-500">{application.studentId}</p>
+                        <h4 className="text-lg font-bold text-gray-800">
+                          {application.studentDetails?.fullName || application.studentName || "Unknown Student"}
+                        </h4>
+                        <p className="text-gray-500">
+                          {application.studentId || application.studentDetails?._id || "No ID"}
+                        </p>
                       </div>
                     </div>
                     <span
@@ -63,15 +77,21 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm text-gray-500">Company</p>
-                        <p className="font-medium text-gray-800">{application.companyName}</p>
+                        <p className="font-medium text-gray-800">
+                          {application.companyDetails?.name || application.companyName || "N/A"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Role</p>
-                        <p className="font-medium text-gray-800">{application.role}</p>
+                        <p className="font-medium text-gray-800">
+                          {application.companyDetails?.jobRole || application.role || "N/A"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Applied Date</p>
-                        <p className="font-medium text-gray-800">{application.appliedDate}</p>
+                        <p className="font-medium text-gray-800">
+                          {formatDate(application.appliedDate || application.createdAt)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -81,64 +101,52 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                     <div className="bg-gray-50 rounded-lg p-3">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <p className="text-xs text-gray-500">Email</p>
-                          <p className="text-sm">{application.studentDetails.email}</p>
+                          <p className="text-xs text-gray-500">College Email</p>
+                          <p className="text-sm">{application.studentDetails?.collegeEmail || "N/A"}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Phone</p>
-                          <p className="text-sm">{application.studentDetails.phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">CGPA</p>
-                          <p className="text-sm">{application.studentDetails.cgpa}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Branch</p>
-                          <p className="text-sm">{application.studentDetails.branch}</p>
+                          <p className="text-xs text-gray-500">Personal Email</p>
+                          <p className="text-sm">{application.studentDetails?.personalEmail || "N/A"}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-500 mb-1">Skills</p>
-                    <div className="flex flex-wrap gap-2">
-                      {application.studentDetails.skills.map((skill, index) => (
-                        <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {application.interviewDate && (
+                  {application.studentDetails?.resume && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Interview Details</p>
+                      <p className="text-sm text-gray-500 mb-1">Resume</p>
                       <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="grid grid-cols-1 gap-2">
-                          <div>
-                            <p className="text-xs text-gray-500">Interview Date</p>
-                            <p className="text-sm">{application.interviewDate}</p>
-                          </div>
-                          {application.interviewFeedback && (
-                            <div>
-                              <p className="text-xs text-gray-500">Feedback</p>
-                              <p className="text-sm">{application.interviewFeedback}</p>
-                            </div>
-                          )}
-                        </div>
+                        <a
+                          href={application.studentDetails.resume}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 text-sm flex items-center"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          View Resume
+                        </a>
                       </div>
                     </div>
                   )}
 
-                  {application.package && (
+                  {application.companyDetails?.description && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Offer Details</p>
-                      <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-                        <div>
-                          <p className="text-xs text-gray-500">Package</p>
-                          <p className="text-sm font-medium text-green-700">{application.package}</p>
-                        </div>
+                      <p className="text-sm text-gray-500 mb-1">Company Description</p>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm">{application.companyDetails.description}</p>
                       </div>
                     </div>
                   )}
@@ -147,7 +155,7 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                     <p className="text-sm font-medium text-gray-700 mb-2">Update Application Status</p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => onUpdateStatus(application.id, "Pending")}
+                        onClick={() => onUpdateStatus(application._id, application.studentDetails?._id, "Pending")}
                         className={`px-3 py-1.5 rounded text-sm font-medium ${
                           application.status === "Pending"
                             ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
@@ -157,7 +165,7 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                         Pending
                       </button>
                       <button
-                        onClick={() => onUpdateStatus(application.id, "Selected")}
+                        onClick={() => onUpdateStatus(application._id, application.studentDetails?._id, "Selected")}
                         className={`px-3 py-1.5 rounded text-sm font-medium ${
                           application.status === "Selected"
                             ? "bg-green-100 text-green-800 border border-green-200"
@@ -167,7 +175,7 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
                         Selected
                       </button>
                       <button
-                        onClick={() => onUpdateStatus(application.id, "Rejected")}
+                        onClick={() => onUpdateStatus(application._id, application.studentDetails?._id, "Rejected")}
                         className={`px-3 py-1.5 rounded text-sm font-medium ${
                           application.status === "Rejected"
                             ? "bg-red-100 text-red-800 border border-red-200"
@@ -190,14 +198,16 @@ const ApplicationDetailsModal = ({ application, isOpen, onClose, onUpdateStatus 
             >
               Close
             </button>
-            <a
-              href={application.resumeLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              View Resume
-            </a>
+            {application.studentDetails?.resume && (
+              <a
+                href={application.studentDetails.resume}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              >
+                View Resume
+              </a>
+            )}
           </div>
         </div>
       </div>

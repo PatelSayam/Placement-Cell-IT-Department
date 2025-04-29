@@ -11,13 +11,13 @@ const StudentTable = ({ students, onViewDetails }) => {
               Branch
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Email
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               CGPA
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Applications
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
@@ -33,24 +33,27 @@ const StudentTable = ({ students, onViewDetails }) => {
             </tr>
           ) : (
             students.map((student) => (
-              <tr key={student.id} className="hover:bg-gray-50">
+              <tr key={student._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 font-medium">{student.name.charAt(0)}</span>
+                      <span className="text-indigo-600 font-medium">{student.fullName ? student.fullName.charAt(0) : "?"}</span>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                      <div className="text-sm text-gray-500">{student.rollNo}</div>
+                      <div className="text-sm font-medium text-gray-900">{student.fullName || "N/A"}</div>
+                      <div className="text-sm text-gray-500">{student.rollNo ? "IT"+student.rollNo : "N/A"}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{student.branch}</div>
-                  <div className="text-sm text-gray-500">{student.year}</div>
+                  <div className="text-sm text-gray-500">{student.year || "N/A"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{student.cgpa}</div>
+                  <div className="text-sm text-gray-900">{student.personalEmail || "N/A"}</div>
+                  <div className="text-sm text-gray-500">{student.collegeEmail || "N/A"}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{student.cpi || "N/A"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
@@ -60,15 +63,11 @@ const StudentTable = ({ students, onViewDetails }) => {
                         : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
-                    {student.placementStatus}
+                    {student.placementStatus || "Unplaced"}
                   </span>
-                  {student.placementStatus === "Placed" && (
+                  {student.placementStatus === "Placed" && student.company && (
                     <div className="text-xs text-gray-500 mt-1">{student.company}</div>
                   )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{student.applications} Applications</div>
-                  <div className="text-sm text-gray-500">{student.offers} Offers</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button onClick={() => onViewDetails(student)} className="text-indigo-600 hover:text-indigo-900 mr-3">

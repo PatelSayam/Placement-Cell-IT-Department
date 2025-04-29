@@ -1,3 +1,5 @@
+"use client"
+
 const ApplicationFilters = ({ onFilterChange, filters, companies }) => {
   const handleFilterChange = (e) => {
     const { name, value } = e.target

@@ -3,7 +3,8 @@ import {
     applyToJob, 
     getApplicant, 
     getCompany, 
-    changeApplicationState 
+    changeApplicationState, 
+    getAllApplications
 } from "../controllers/application.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js"; 
 import { verifyJWTAdmin } from "../middlewares/admin.auth.middleware.js"; 
@@ -23,6 +24,7 @@ router.post("/apply/:companyId", verifyJWT, upload.fields(
 
 // Get all applicants for a company (admin route)
 router.get("/applicants/:companyId", verifyJWTAdmin, getApplicant);
+router.get("/applicants", verifyJWTAdmin, getAllApplications);
 
 // Get all companies a student applied to (student route)
 router.get("/companies/applied", verifyJWT, getCompany);
