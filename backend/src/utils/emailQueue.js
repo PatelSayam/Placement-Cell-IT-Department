@@ -9,8 +9,8 @@ const emailQueue = new Bull('emailQueue', redisConfig);
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'email@gmail.com', 
-    pass: 'email-password',   
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS,   
   },
 });
 
