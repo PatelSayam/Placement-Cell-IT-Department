@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import * as XLSX from "xlsx"
 import CompanyCard from "../components/CompanyCard"

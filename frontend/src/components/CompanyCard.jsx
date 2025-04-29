@@ -76,6 +76,7 @@ const CompanyCard = ({ company }) => {
         </div>
 
         <div className="mt-6 flex space-x-2">
+
           <button 
             onClick={() => navigate(`/company/${company._id}`, { state: { company } })}
             className="flex-1 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-lg font-medium hover:from-indigo-100 hover:to-purple-100 transition-colors border border-indigo-100"

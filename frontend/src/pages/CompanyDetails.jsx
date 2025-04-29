@@ -25,25 +25,25 @@ const ApplicationForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-  
+
     if (!files.resume) {
       setError("Please upload your resume");
       setIsSubmitting(false);
       return;
     }
-  
+
     if (!companyId) {
       setError("Company information is missing");
       setIsSubmitting(false);
       return;
     }
-  
+
     try {
       const formData = new FormData();
       formData.append("resume", files.resume);
       formData.append("studentId", studentId);
       formData.append("companyId", companyId);
-  
+
       const response = await axios.post(
         `${apiUrl}/application/apply/${companyId}`,
         formData,
@@ -54,27 +54,30 @@ const ApplicationForm = () => {
           }
         }
       );
-  
+
       if (response.status === 200) {
         alert("Application submitted successfully!");
         navigate("/applied");
       }
     } catch (err) {
       console.error("Application failed:", err);
-  
+
       const errorMessage = err.response?.data?.message || "Failed to submit application";
       if (errorMessage === "already applied to this company") {
         alert("You have already applied to this company!");
       } else {
         alert(`Application failed: ${errorMessage}`);
       }
-  
+
       navigate("/applied");
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+  const handleEditJob = ()=>{
+    alert("handle edit Job")
+  }
+
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-md space-y-8">
@@ -115,50 +118,60 @@ const ApplicationForm = () => {
         </div>
       </div>
 
-      {/* Application Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Resume (PDF only)
-          </label>
-          <input
-            type="file"
-            name="resume"
-            accept=".pdf"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-indigo-50 file:text-indigo-700
-              hover:file:bg-indigo-100"
-            required
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            Upload your most recent resume in PDF format
-          </p>
-        </div>
-
-        {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-
+      {user?.role === "admin" ? (
         <div className="flex justify-end">
           <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`px-6 py-2 rounded-lg font-medium text-white ${
-              isSubmitting
-                ? "bg-indigo-300 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
+            onClick={handleEditJob} // define this function to navigate to the edit page
+            className="px-6 py-2 rounded-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
-            {isSubmitting ? "Submitting..." : "Submit Application"}
+            Edit Job
           </button>
         </div>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Resume (PDF only)
+            </label>
+            <input
+              type="file"
+              name="resume"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-md file:border-0
+          file:text-sm file:font-semibold
+          file:bg-indigo-50 file:text-indigo-700
+          hover:file:bg-indigo-100"
+              required
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Upload your most recent resume in PDF format
+            </p>
+          </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`px-6 py-2 rounded-lg font-medium text-white ${isSubmitting
+                  ? "bg-indigo-300 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Application"}
+            </button>
+          </div>
+        </form>
+      )}
+
     </div>
   );
 };
