@@ -3,17 +3,21 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const ApplicationForm = ({ companyId }) => {
+const ApplicationForm = ({ company }) => {  // Removed the 'key' prop
   const [files, setFiles] = useState({
     resume: null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  
-  // Get student ID from Redux store (assuming you have auth state)
-  const { user } = useSelector((state) => state.auth);
+  console.log("company", company)
+  // Get student ID from Redux store
+  const user = useSelector((state) => state.auth.userData);
   const studentId = user?._id;
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  // Get companyId from the company prop
+  const companyId = company?.id;
 
   const handleFileChange = (e) => {
     setFiles({
@@ -33,6 +37,12 @@ const ApplicationForm = ({ companyId }) => {
       return;
     }
 
+    if (!companyId) {
+      setError("Company information is missing");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("resume", files.resume);
@@ -40,7 +50,7 @@ const ApplicationForm = ({ companyId }) => {
       formData.append("companyId", companyId);
 
       const response = await axios.post(
-        `http://localhost:8000/v1/application/apply/${companyId}`,
+        `${apiUrl}/application/apply/${companyId}`,
         formData,
         {
           headers: {
@@ -52,7 +62,7 @@ const ApplicationForm = ({ companyId }) => {
 
       if (response.status === 200) {
         alert("Application submitted successfully!");
-        navigate("/applications"); // Redirect to applications page
+        navigate("/applications");
       }
     } catch (err) {
       console.error("Application failed:", err);
@@ -64,7 +74,9 @@ const ApplicationForm = ({ companyId }) => {
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-      <h2 className="text-xl font-semibold mb-6 text-gray-800">Apply for Position</h2>
+      <h2 className="text-xl font-semibold mb-6 text-gray-800">
+        Apply to {company?.name || "this company"}
+      </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>

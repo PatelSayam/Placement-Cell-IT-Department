@@ -5,29 +5,33 @@ const AppliedCompanies = () => {
   const [appliedCompanies, setAppliedCompanies] = useState([])
 
   useEffect(() => {
-    // Fetch mock data from backend endpoint
     const fetchAppliedCompanies = async () => {
       try {
-        const token = localStorage.getItem("accessToken"); // or however you're storing your token
-    
+        const token = localStorage.getItem("accessToken")
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/application/companies/applied`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           }
-        });
+        })
     
-        const responseData = res.data;  // axios automatically parses JSON
-        console.log("RESPONSE DATA",responseData)
+        const responseData = res.data
+        console.log("RESPONSE DATA", responseData)
+        
         if (responseData.success) {
-          setAppliedCompanies(responseData.data);
+          // Ensure each application has a unique identifier
+          const companiesWithIds = responseData.data.map((app, index) => ({
+            ...app,
+            // Use existing applicationId or create a fallback using index
+            applicationId: app.applicationId || `app-${index}-${Date.now()}`
+          }))
+          setAppliedCompanies(companiesWithIds)
         } else {
-          console.error("Error fetching companies:", responseData.message);
+          console.error("Error fetching companies:", responseData.message)
         }
-    
       } catch (err) {
-        console.error("Failed to fetch applied companies:", err);
+        console.error("Failed to fetch applied companies:", err)
       }
-    };
+    }
     fetchAppliedCompanies()
   }, [])
 
@@ -72,7 +76,7 @@ const AppliedCompanies = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {appliedCompanies.map((app) => (
               <div
-                key={app.applicationId}
+                key={app.applicationId} // Ensure this is unique
                 className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg border border-indigo-100"
               >
                 <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
@@ -123,4 +127,3 @@ const AppliedCompanies = () => {
 }
 
 export default AppliedCompanies
-

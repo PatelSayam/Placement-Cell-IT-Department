@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useSelector } from "react-redux";
 
 const StudentProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -69,19 +70,39 @@ const StudentProfile = () => {
     detailsVerified: false
   });
 
+  const user = useSelector((state) => state.auth.userData);
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/student/view-profile`,
-          { email: "test.personal@gmail.com" }
-        );
-        console.log("DATA", response.data.data)
-        setStudentData(response.data.data);
+          // Get the logged in student's ID from your auth state
+          console.log("user", user)
+          const studentId = user?._id;
+          const email = user?.personalEmail;
+          console.log("studentid", studentId)
+          console.log("email", email)
+  
+          const response = await axios.post(
+              `${import.meta.env.VITE_API_URL}/student/view-profile`,
+              { _id: studentId, email:email }, // Using ID instead of hardcoded email
+              {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                  }
+              }
+          );
+          
+          if (response.data && response.data.data) {
+              setStudentData(response.data.data);
+          } else {
+              console.error("Unexpected response format:", response);
+          }
       } catch (err) {
-        console.error("Failed to fetch student data:", err);
+          console.error("Failed to fetch student data:", err);
+          // Optionally show error to user
+          alert(err.response?.data?.message || "Failed to load profile data");
       }
-    };
+  };
     fetchProfile();
   }, []);
 

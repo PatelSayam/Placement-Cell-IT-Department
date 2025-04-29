@@ -41,7 +41,7 @@ const StudentHome = () => {
             </p>
           </div>
         </div>
-        
+        {console.log("COMPANIES",companies)}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {companies.map((company) => (
             <CompanyCard 
