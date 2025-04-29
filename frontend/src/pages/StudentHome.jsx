@@ -1,28 +1,58 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CompanyCard from "../components/CompanyCard";
+import axios from "axios";
 
-const companies = [
-  {
-    id: 1,
-    name: "Google",
-    role: "SDE Intern",
-    location: "Bangalore",
-    ctc: "12 LPA",
-    logo: "https://logo.clearbit.com/google.com",
-  },
-  {
-    id: 2,
-    name: "Microsoft",
-    role: "Product Intern",
-    location: "Hyderabad",
-    ctc: "11 LPA",
-    logo: "https://logo.clearbit.com/microsoft.com",
-  },
-];
+// const companies = [
+//   {
+//     id: 1,
+//     name: "Google",
+//     role: "SDE Intern",
+//     location: "Bangalore",
+//     ctc: "12 LPA",
+//     logo: "https://logo.clearbit.com/google.com",
+//   },
+//   {
+//     id: 2,
+//     name: "Microsoft",
+//     role: "Product Intern",
+//     location: "Hyderabad",
+//     ctc: "11 LPA",
+//     logo: "https://logo.clearbit.com/microsoft.com",
+//   },
+// ];
 
 const StudentHome = () => {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await axios.get(`${apiUrl}/admin/companies`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });        
+        setCompanies(response.data.data);
+      } catch (err) {
+        console.log(err)
+        setError(err.response?.data?.message || 'Failed to fetch companies');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, [apiUrl]);
+
+  if (loading) return <div>Loading companies...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6">
@@ -41,30 +71,13 @@ const StudentHome = () => {
             </p>
           </div>
         </div>
-        {console.log("COMPANIES",companies)}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {companies.map((company) => (
             <CompanyCard 
-              key={company.id} 
+              key={company._id} 
               company={company} 
-              onClick={() => navigate(`/company/${company.id}`)} 
             />
           ))}
-        </div>
-        
-        <div className="mt-12 bg-white rounded-xl shadow-md overflow-hidden border border-indigo-100 p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-4 md:mb-0">
-              <h2 className="text-xl font-bold text-gray-800">Looking for more opportunities?</h2>
-              <p className="text-gray-600">Check back regularly as new companies are added daily</p>
-            </div>
-            <button 
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-colors"
-              onClick={() => navigate('/all-companies')}
-            >
-              View All Companies
-            </button>
-          </div>
         </div>
       </div>
     </div>

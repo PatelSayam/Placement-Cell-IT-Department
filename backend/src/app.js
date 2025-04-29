@@ -26,5 +26,16 @@ import applicationRouter from "./routes/application.routes.js"
 app.use("/v1/student",studentRouter)
 app.use("/v1/admin",adminRouter)
 app.use("/v1/application",applicationRouter)
-
+app.use((err, req, res, next) => {
+    console.error("Global Error Handler:", err); // Optional: for debugging
+  
+    const statusCode = err.statuscode || 500;
+  
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Internal Server Error",
+      errors: err.errors || [],
+      data: err.data || null,
+    });
+  });
 export { app }

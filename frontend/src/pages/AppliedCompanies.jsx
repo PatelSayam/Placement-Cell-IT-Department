@@ -15,8 +15,6 @@ const AppliedCompanies = () => {
         })
     
         const responseData = res.data
-        console.log("RESPONSE DATA", responseData)
-        
         if (responseData.success) {
           // Ensure each application has a unique identifier
           const companiesWithIds = responseData.data.map((app, index) => ({
@@ -81,7 +79,7 @@ const AppliedCompanies = () => {
               >
                 <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                 <div className="p-6">
-                  {app.companyLogo && (
+                  {/* {app.companyLogo && (
                     <div className="flex justify-center mb-4">
                       <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center p-2 border border-indigo-100">
                         <img
@@ -91,11 +89,11 @@ const AppliedCompanies = () => {
                         />
                       </div>
                     </div>
-                  )}
+                  )} */}
 
-                  <h2 className="text-xl font-semibold text-gray-800 text-center mb-1">{app.companyName}</h2>
+                  <h2 className="text-xl font-semibold text-gray-800 text-center mb-1">{app.companyDetails.name}</h2>
 
-                  <p className="text-gray-500 text-center mb-4">{app.jobRole}</p>
+                  <p className="text-gray-500 text-center mb-4">{app.companyDetails.jobRole}</p>
 
                   <div className="flex justify-center">
                     <span
@@ -110,12 +108,14 @@ const AppliedCompanies = () => {
                       {app.status}
                     </span>
                   </div>
+                  <p className="text-gray-500 text-center mb-4">{app.companyDetails.description}</p>
 
-                  <div className="mt-6 pt-4 border-t border-gray-100">
+
+                  {/* <div className="mt-6 pt-4 border-t border-gray-100">
                     <button className="w-full py-2 bg-indigo-50 text-indigo-700 rounded-lg font-medium hover:bg-indigo-100 transition-colors">
                       View Details
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}

@@ -1,15 +1,18 @@
-const CompanyCard = ({ company, onClick, onDelete }) => {
+import { useNavigate } from "react-router-dom"
+
+const CompanyCard = ({ company }) => {
+  const navigate = useNavigate();
   return (
     <div
       className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px] border border-indigo-100"
     >
       <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
       <div className="p-6">
-        <div className="flex justify-center mb-4">
+        {/* <div className="flex justify-center mb-4">
           <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center p-2 border border-indigo-100">
             <img src={company.logo || "/placeholder.svg"} alt={company.name} className="w-12 h-12 object-contain" />
           </div>
-        </div>
+        </div> */}
 
         <h3 className="text-xl font-semibold text-center text-gray-800 mb-1">{company.name}</h3>
         <p className="text-indigo-600 font-medium text-center mb-4">{company.role || company.industry}</p>
@@ -74,7 +77,7 @@ const CompanyCard = ({ company, onClick, onDelete }) => {
 
         <div className="mt-6 flex space-x-2">
           <button 
-            onClick={onClick} 
+            onClick={() => navigate(`/company/${company._id}`, { state: { company } })}
             className="flex-1 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-lg font-medium hover:from-indigo-100 hover:to-purple-100 transition-colors border border-indigo-100"
           >
             View Details
