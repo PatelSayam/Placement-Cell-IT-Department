@@ -1,6 +1,7 @@
 import { useState, useRef } from "react"
 import * as XLSX from "xlsx"
 import axios from "axios";
+import AddEmailsToAllowedList from "../components/AddEmailsToAllowedList";
 
 const Settings = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -639,6 +640,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
+          <AddEmailsToAllowedList/>
         </div>
       </div>
     </div>
