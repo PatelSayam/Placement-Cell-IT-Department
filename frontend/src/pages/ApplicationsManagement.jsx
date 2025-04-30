@@ -6,6 +6,7 @@ import * as XLSX from "xlsx"
 import ApplicationsTable from "../components/ApplicationsTable"
 import ApplicationFilters from "../components/ApplicationFilters"
 import ApplicationDetailsModal from "../components/ApplicationDetailsModal"
+import ExportColumnsModal from "../components/ExportColumnsModal"
 
 const ApplicationsManagement = () => {
   const [applications, setApplications] = useState([])
@@ -15,11 +16,33 @@ const ApplicationsManagement = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [exportLoading, setExportLoading] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [filters, setFilters] = useState({
     company: "All",
     status: "All",
     dateRange: "All",
   })
+
+  // Define all possible columns for export
+  const allExportColumns = [
+    "Student Name",
+    "Student ID",
+    "College Email",
+    "Personal Email",
+    "Company",
+    "Role",
+    "Applied Date",
+    "Status",
+    "Resume URL",
+    "CGPA",
+    "Branch",
+    "Skills",
+    "Phone",
+    "Address",
+    "LinkedIn",
+    "GitHub",
+    "Portfolio",
+  ]
 
   // Fetch applications on component mount
   useEffect(() => {
@@ -29,7 +52,8 @@ const ApplicationsManagement = () => {
   // Watch for company filter changes to trigger Excel export
   useEffect(() => {
     if (filters.company !== "All") {
-      exportToExcel(filteredApplications)
+      // Instead of directly exporting, open the column selection modal
+      setIsExportModalOpen(true)
     }
   }, [filters.company])
 
@@ -78,9 +102,9 @@ const ApplicationsManagement = () => {
     }
   }
 
-  // Function to export applications to Excel
-  const exportToExcel = async (applicationsToExport) => {
-    if (applicationsToExport.length === 0) return
+  // Function to export applications to Excel with selected columns
+  const exportToExcel = async (applicationsToExport, selectedColumns) => {
+    if (applicationsToExport.length === 0 || selectedColumns.length === 0) return
 
     setExportLoading(true)
     try {
@@ -93,33 +117,39 @@ const ApplicationsManagement = () => {
 
         // Fetch student details
         const studentDetails = await fetchStudentDetails(studentId)
-        console.log("studentDetails",studentDetails);
         
-
-        // Create an enriched application object with all the data we want to include
-        const enrichedApp = {
+        // Create a complete data object with all possible fields
+        const completeData = {
           "Student Name": app.studentId?.fullName || studentDetails?.fullName || "N/A",
           "Student ID": studentId || "N/A",
           "College Email": studentDetails?.collegeEmail || "N/A",
           "Personal Email": studentDetails?.personalEmail || "N/A",
-          Company: app.companyId?.name || "N/A",
-          Role: app.companyDetails?.jobRole || app.role || "N/A",
+          "Company": app.companyId?.name || "N/A",
+          "Role": app.companyDetails?.jobRole || app.role || "N/A",
           "Applied Date": app.appliedDate
             ? new Date(app.appliedDate).toLocaleDateString()
             : new Date(app.createdAt || Date.now()).toLocaleDateString(),
-          Status: app.status || "N/A",
+          "Status": app.status || "N/A",
           "Resume URL": app?.resume || "N/A",
-          CGPA: studentDetails?.cgpa || "N/A",
-          Branch: studentDetails?.branch || "N/A",
-          Skills: studentDetails?.skills?.join(", ") || "N/A",
-          Phone: studentDetails?.contactNumber || "N/A",
-          Address: studentDetails?.permanentAddress.addressLine+studentDetails?.permanentAddress.city+studentDetails?.permanentAddress.pincode || "N/A",
-          LinkedIn: studentDetails?.socialLinks.linkedin || "N/A",
-          GitHub: studentDetails?.socialLinks.github || "N/A",
-          Portfolio: studentDetails?.portfolio || "N/A",
+          "CGPA": studentDetails?.cgpa || "N/A",
+          "Branch": studentDetails?.branch || "N/A",
+          "Skills": studentDetails?.skills?.join(", ") || "N/A",
+          "Phone": studentDetails?.contactNumber || "N/A",
+          "Address": studentDetails?.permanentAddress?.addressLine + 
+                    (studentDetails?.permanentAddress?.city ? ", " + studentDetails.permanentAddress.city : "") + 
+                    (studentDetails?.permanentAddress?.pincode ? ", " + studentDetails.permanentAddress.pincode : "") || "N/A",
+          "LinkedIn": studentDetails?.socialLinks?.linkedin || "N/A",
+          "GitHub": studentDetails?.socialLinks?.github || "N/A",
+          "Portfolio": studentDetails?.portfolio || "N/A",
         }
+        
+        // Create a filtered object with only the selected columns
+        const filteredData = {}
+        selectedColumns.forEach(column => {
+          filteredData[column] = completeData[column]
+        })
 
-        enrichedData.push(enrichedApp)
+        enrichedData.push(filteredData)
       }
 
       // Create a worksheet from the enriched data
@@ -260,9 +290,14 @@ const ApplicationsManagement = () => {
     return [...new Set(companyNames)]
   }
 
-  // Manual export button handler
+  // Manual export button handler - opens the column selection modal
   const handleManualExport = () => {
-    exportToExcel(filteredApplications)
+    setIsExportModalOpen(true)
+  }
+
+  // Handle export with selected columns
+  const handleExportWithColumns = (selectedColumns) => {
+    exportToExcel(filteredApplications, selectedColumns)
   }
 
   return (
@@ -319,7 +354,7 @@ const ApplicationsManagement = () => {
 
         <ApplicationFilters onFilterChange={handleFilterChange} filters={filters} companies={getUniqueCompanies()} />
 
-        {exportLoading && filters.company !== "All" && (
+        {exportLoading && (
           <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-md flex items-center">
             <svg
               className="animate-spin mr-2 h-5 w-5"
@@ -334,7 +369,7 @@ const ApplicationsManagement = () => {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
-            Preparing Excel export for {filters.company}... This may take a moment.
+            Preparing Excel export... This may take a moment.
           </div>
         )}
 
@@ -362,6 +397,14 @@ const ApplicationsManagement = () => {
             onUpdateStatus={updateApplicationStatus}
           />
         )}
+
+        {/* Column Selection Modal */}
+        <ExportColumnsModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          onExport={handleExportWithColumns}
+          allColumns={allExportColumns}
+        />
       </div>
     </div>
   )
