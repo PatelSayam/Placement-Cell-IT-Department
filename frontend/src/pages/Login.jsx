@@ -39,7 +39,7 @@ const Login = () => {
       localStorage.setItem("accessToken", response.data.data.accessToken);
       localStorage.setItem("refreshToken", response.data.data.refreshToken);
       dispatch(login(userData)); 
-      userData.role === 'admin' ? navigate("/admin/dashboard") : navigate("/student/dashboard");
+      userData.role === 'admin' ? navigate("/admin/dashboard") : navigate("/home");
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed. Please check your credentials and try again.");

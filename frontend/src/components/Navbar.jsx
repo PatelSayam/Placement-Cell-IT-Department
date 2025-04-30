@@ -40,6 +40,7 @@ export default function Navbar() {
   };
 
   const isAdmin = user?.role === "admin";
+  const isLoggedIn = !!user; // Check if user is logged in
 
   return (
     <nav className="bg-white shadow-md relative z-10">
@@ -71,30 +72,30 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-6">
-            {/* Student links */}
-            {!isAdmin && (
-              <div className="flex gap-6">
-                <NavLink to="/home">Home</NavLink>
-                <NavLink to="/applied">Applications</NavLink>
-                <NavLink to="/profile">Profile</NavLink>
-              </div>
-            )}
+          {/* Desktop navigation - Only show if logged in */}
+          {isLoggedIn && (
+            <div className="hidden md:flex md:items-center md:space-x-6">
+              {/* Student links */}
+              {!isAdmin && (
+                <div className="flex gap-6">
+                  <NavLink to="/home">Home</NavLink>
+                  <NavLink to="/applied">Applications</NavLink>
+                  <NavLink to="/profile">Profile</NavLink>
+                </div>
+              )}
 
-            {/* Admin links */}
-            {isAdmin && (
-              <div className="flex gap-6">
-                <NavLink to="/admin/dashboard">Dashboard</NavLink>
-                <NavLink to="/admin/students">Students</NavLink>
-                <NavLink to="/admin/companies">Companies</NavLink>
-                <NavLink to="/admin/applications">Applications</NavLink>
-                <NavLink to="/admin/analytics">Analytics</NavLink>
-                <NavLink to="/admin/settings">Settings</NavLink>
-              </div>
-            )}
+              {/* Admin links */}
+              {isAdmin && (
+                <div className="flex gap-6">
+                  <NavLink to="/admin/dashboard">Dashboard</NavLink>
+                  <NavLink to="/admin/students">Students</NavLink>
+                  <NavLink to="/admin/companies">Companies</NavLink>
+                  <NavLink to="/admin/applications">Applications</NavLink>
+                  <NavLink to="/admin/analytics">Analytics</NavLink>
+                  <NavLink to="/admin/settings">Settings</NavLink>
+                </div>
+              )}
 
-            {user && (
               <div className="flex items-center gap-3 ml-6 border-l border-gray-100 pl-6">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -127,95 +128,121 @@ export default function Navbar() {
                   Logout
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isMenuOpen ? (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
+          {/* Login button when not logged in */}
+          {/* {!isLoggedIn && (
+            <div className="hidden md:flex md:items-center">
+              <Link
+                to="/login"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Login
+              </Link>
+            </div>
+          )} */}
+
+          {/* Mobile menu button - Only show if logged in */}
+          {isLoggedIn && (
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={toggleMenu}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isMenuOpen ? (
+                  <svg
+                    className="block h-6 w-6"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="block h-6 w-6"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Mobile login button when not logged in */}
+          {!isLoggedIn && (
+            <div className="md:hidden flex items-center">
+              <Link
+                to="/login"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Login
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div className={`${isMenuOpen ? "block" : "hidden"} md:hidden`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-100">
-          {/* Student Links */}
-          {!isAdmin && (
-            <>
-              <MobileNavLink to="/home" onClick={toggleMenu}>
-                Home
-              </MobileNavLink>
-              <MobileNavLink to="/applied" onClick={toggleMenu}>
-                Applications
-              </MobileNavLink>
-              <MobileNavLink to="/profile" onClick={toggleMenu}>
-                Profile
-              </MobileNavLink>
-            </>
-          )}
+      {/* Mobile menu - Only show if logged in and menu is open */}
+      {isLoggedIn && isMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-100">
+            {/* Student Links */}
+            {!isAdmin && (
+              <>
+                <MobileNavLink to="/home" onClick={toggleMenu}>
+                  Home
+                </MobileNavLink>
+                <MobileNavLink to="/applied" onClick={toggleMenu}>
+                  Applications
+                </MobileNavLink>
+                <MobileNavLink to="/profile" onClick={toggleMenu}>
+                  Profile
+                </MobileNavLink>
+              </>
+            )}
 
-          {/* Admin Links */}
-          {isAdmin && (
-            <>
-              <MobileNavLink to="/admin/dashboard" onClick={toggleMenu}>
-                Dashboard
-              </MobileNavLink>
-              <MobileNavLink to="/admin/students" onClick={toggleMenu}>
-                Students
-              </MobileNavLink>
-              <MobileNavLink to="/admin/companies" onClick={toggleMenu}>
-                Companies
-              </MobileNavLink>
-              <MobileNavLink to="/admin/applications" onClick={toggleMenu}>
-                Applications
-              </MobileNavLink>
-              <MobileNavLink to="/admin/analytics" onClick={toggleMenu}>
-                Analytics
-              </MobileNavLink>
-              <MobileNavLink to="/admin/settings" onClick={toggleMenu}>
-                Settings
-              </MobileNavLink>
-            </>
-          )}
-        </div>
-        {user && (
+            {/* Admin Links */}
+            {isAdmin && (
+              <>
+                <MobileNavLink to="/admin/dashboard" onClick={toggleMenu}>
+                  Dashboard
+                </MobileNavLink>
+                <MobileNavLink to="/admin/students" onClick={toggleMenu}>
+                  Students
+                </MobileNavLink>
+                <MobileNavLink to="/admin/companies" onClick={toggleMenu}>
+                  Companies
+                </MobileNavLink>
+                <MobileNavLink to="/admin/applications" onClick={toggleMenu}>
+                  Applications
+                </MobileNavLink>
+                <MobileNavLink to="/admin/analytics" onClick={toggleMenu}>
+                  Analytics
+                </MobileNavLink>
+                <MobileNavLink to="/admin/settings" onClick={toggleMenu}>
+                  Settings
+                </MobileNavLink>
+              </>
+            )}
+          </div>
           <div className="pt-4 pb-3 border-t border-gray-100">
             <div className="flex items-center px-4">
               <div className="flex-shrink-0">
@@ -256,8 +283,8 @@ export default function Navbar() {
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 }
