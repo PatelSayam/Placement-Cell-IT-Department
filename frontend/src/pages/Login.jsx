@@ -27,7 +27,7 @@ const Login = () => {
         password,
       });
 
-      console.log(response.data);
+      // console.log("response data is ",response.data);
       
 
       // Assuming both student and admin login return similar data structure
@@ -39,7 +39,7 @@ const Login = () => {
       localStorage.setItem("accessToken", response.data.data.accessToken);
       localStorage.setItem("refreshToken", response.data.data.refreshToken);
       dispatch(login(userData)); 
-      navigate("/dashboard");
+      userData.role === 'admin' ? navigate("/admin/dashboard") : navigate("/student/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed. Please check your credentials and try again.");
