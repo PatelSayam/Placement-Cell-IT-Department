@@ -9,7 +9,7 @@ const emailQueue = new Bull('emailQueue', {
     attempts: 3,                // Retry up to 3 times
     backoff: {
       type: 'exponential',     // Backoff strategy
-      delay: 5000              // Start with 5 seconds delay
+      delay: 10000              // Start with 5 seconds delay
     },
     removeOnComplete: true,    // Clean up successful jobs
     removeOnFail: false        // Keep failed jobs for inspection/retry
