@@ -18,7 +18,7 @@ const StudentFilters = ({ onSearch, onFilterChange, filters }) => {
   return (
     <div className="bg-white rounded-xl shadow-md border border-indigo-100 p-4 sm:p-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg
@@ -45,25 +45,6 @@ const StudentFilters = ({ onSearch, onFilterChange, filters }) => {
             />
           </div>
         </div>
-
-        <div>
-          <select
-            name="branch"
-            value={filters.branch}
-            onChange={handleFilterChange}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="All">All Branches</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Information Technology">Information Technology</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Mechanical">Mechanical</option>
-            <option value="Civil">Civil</option>
-            <option value="Chemical">Chemical</option>
-          </select>
-        </div>
-
         <div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
             <select
@@ -75,19 +56,6 @@ const StudentFilters = ({ onSearch, onFilterChange, filters }) => {
               <option value="All">All Status</option>
               <option value="Placed">Placed</option>
               <option value="Not Placed">Not Placed</option>
-            </select>
-
-            <select
-              name="year"
-              value={filters.year}
-              onChange={handleFilterChange}
-              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              <option value="All">All Years</option>
-              <option value="1st Year">1st Year</option>
-              <option value="2nd Year">2nd Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="4th Year">4th Year</option>
             </select>
           </div>
         </div>

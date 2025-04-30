@@ -1,10 +1,9 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import * as XLSX from "xlsx"
 import StudentFilters from "../components/StudentFilters"
 import StudentTable from "../components/StudentTable"
 import StudentDetailsModal from "../components/StudentDetailsModal"
+import axios from 'axios';
 
 const StudentsManagement = () => {
   const [students, setStudents] = useState([])
@@ -25,28 +24,25 @@ const StudentsManagement = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        setLoading(true)
-        const response = await fetch("http://localhost:8000/v1/student/get-all-students")
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log("API Response:", data.data)
-
+        setLoading(true);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/student/get-all-students`);
+      
+        console.log("API Response:", response.data);
+      
+        const data = response.data;
+      
         if (data.statusCode === 200 && data.data) {
-          setStudents(data.data)
-          setFilteredStudents(data.data)
+          setStudents(data.data);
+          setFilteredStudents(data.data);
         } else {
-          throw new Error(data.message || "Failed to fetch students")
+          throw new Error(data.message || "Failed to fetch students");
         }
       } catch (err) {
-        console.error("Error fetching students:", err)
-        setError(err.message)
+        console.error("Error fetching students:", err);
+        setError(err.response?.data?.message || err.message);
       } finally {
-        setLoading(false)
-      }
+        setLoading(false);
+      }      
     }
 
     fetchStudents()
