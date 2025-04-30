@@ -243,31 +243,24 @@ const getEligibleStudents = asyncHandler(async (req, res) => {
 })
 
 const notifyStudents = asyncHandler(async (req, res) => {
-
   const { emails, subject, message } = req.body;
-  console.log(req.body)
-  //emails is a array of all the emails.
-  //extract all the emails from frontend 
-  //so that server dont have any load for file handling.
-
 
   if (!emails || !subject || !message) {
     return res.status(400).json(new ApiResponse(400, null, 'Missing required fields.'));
   }
 
-
+  // ✅ Add each job with retry logic (optional if defaultJobOptions exists)
   emails.forEach((email) => {
-    emailQueue.add({ to: email, subject, text: message }); 
+    emailQueue.add({ to: email, subject, text: message }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 5000,
+      }
+    });
   });
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200, 
-        'Emails queued successfully'
-      )
-    );
+  return res.status(200).json(new ApiResponse(200, 'Emails queued successfully'));
 });
 
 const delistCompany =asyncHandler(async (req, res) => {
