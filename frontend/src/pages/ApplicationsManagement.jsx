@@ -93,6 +93,8 @@ const ApplicationsManagement = () => {
 
         // Fetch student details
         const studentDetails = await fetchStudentDetails(studentId)
+        console.log("studentDetails",studentDetails);
+        
 
         // Create an enriched application object with all the data we want to include
         const enrichedApp = {
@@ -106,14 +108,14 @@ const ApplicationsManagement = () => {
             ? new Date(app.appliedDate).toLocaleDateString()
             : new Date(app.createdAt || Date.now()).toLocaleDateString(),
           Status: app.status || "N/A",
-          "Resume URL": studentDetails?.resume || "N/A",
+          "Resume URL": app?.resume || "N/A",
           CGPA: studentDetails?.cgpa || "N/A",
           Branch: studentDetails?.branch || "N/A",
           Skills: studentDetails?.skills?.join(", ") || "N/A",
-          Phone: studentDetails?.phone || "N/A",
-          Address: studentDetails?.address || "N/A",
-          LinkedIn: studentDetails?.linkedin || "N/A",
-          GitHub: studentDetails?.github || "N/A",
+          Phone: studentDetails?.contactNumber || "N/A",
+          Address: studentDetails?.permanentAddress.addressLine+studentDetails?.permanentAddress.city+studentDetails?.permanentAddress.pincode || "N/A",
+          LinkedIn: studentDetails?.socialLinks.linkedin || "N/A",
+          GitHub: studentDetails?.socialLinks.github || "N/A",
           Portfolio: studentDetails?.portfolio || "N/A",
         }
 
